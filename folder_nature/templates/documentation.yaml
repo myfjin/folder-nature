@@ -1,0 +1,12 @@
+schema_version: "1.0"
+identity:
+  name: documentation                   # TODO: customize via --name
+  being: documentation
+  purpose: Project documentation, guides, and references
+director: false
+tags:
+  - docs
+  - reference
+rules:
+  - Keep documentation current — update alongside the systems it describes
+  - Markdown preferred for portability

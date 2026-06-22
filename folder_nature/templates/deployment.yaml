@@ -1,0 +1,14 @@
+schema_version: "1.0"
+identity:
+  name: deployment                      # TODO: customize via --name
+  being: configs
+  purpose: Production-touching configuration and deploy scripts
+director: false
+tags:
+  - production
+  - deploy
+  - sensitive
+rules:
+  - Only deploy scripts and verified-by-review configs live here
+  - Changes require explicit deploy approval; do not edit in-place during incidents
+  - Secrets never stored here in plaintext — use .env or secret manager references

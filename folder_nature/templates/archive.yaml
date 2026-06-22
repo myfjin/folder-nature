@@ -1,0 +1,13 @@
+schema_version: "1.0"
+identity:
+  name: archive                         # TODO: customize via --name
+  being: collector
+  purpose: Historical / inactive artifacts retained for reference
+director: false
+tags:
+  - archive
+  - inactive
+  - reference
+rules:
+  - Do not modify archived content; create a new working copy if changes needed
+  - Review for retention annually
