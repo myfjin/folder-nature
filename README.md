@@ -26,10 +26,13 @@ interact with its contents.
 ## Install
 
 ```bash
-pip install folder-nature
+pip install git+https://github.com/myfjin/folder-nature.git
 ```
 
 Requires Python 3.10+. Single runtime dependency: PyYAML.
+
+> **PyPI release planned for late July 2026.** Once published, install
+> will simplify to `pip install folder-nature`.
 
 ## 5-minute tour
 
