@@ -1,0 +1,11 @@
+schema_version: "1.0"
+identity:
+  name: workspace                       # TODO: customize via --name or replace
+  being: workspace
+  purpose: Active working directory for ongoing project work
+director: false
+tags:
+  - work
+  - active
+rules:
+  - Files in this directory are work-in-progress; consider archiving stable artifacts

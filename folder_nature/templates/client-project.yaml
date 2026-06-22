@@ -1,0 +1,13 @@
+schema_version: "1.0"
+identity:
+  name: client-project                  # TODO: customize via --name
+  being: workspace
+  purpose: Client-specific project artifacts and deliverables
+director: false
+tags:
+  - client
+  - project
+  - active
+rules:
+  - Sensitive client data — confirm sharing permissions before external distribution
+  - Archive after project handoff
