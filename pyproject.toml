@@ -4,10 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "folder-nature"
-version = "0.1.0"
+version = "0.2.0.dev0"
 description = "Semantic identity for filesystem folders — folders become conversation partners"
 readme = "README.md"
-license = {text = "MIT"}
+license = {text = "Apache-2.0"}
 authors = [
     {name = "Illia Hladkyi"},
 ]
@@ -24,7 +24,7 @@ classifiers = [
     "Environment :: Console",
     "Intended Audience :: Developers",
     "Intended Audience :: System Administrators",
-    "License :: OSI Approved :: MIT License",
+    "License :: OSI Approved :: Apache Software License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -41,6 +41,7 @@ dependencies = [
 dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
+    "black>=23.0",   # used by the reformat-survival test (proves the watermark survives a real formatter)
 ]
 
 [project.scripts]
@@ -52,7 +53,7 @@ Repository = "https://github.com/myfjin/folder-nature"
 Issues = "https://github.com/myfjin/folder-nature/issues"
 
 [tool.setuptools]
-packages = ["folder_nature"]
+packages = ["folder_nature", "folder_nature.mark"]
 include-package-data = true
 
 [tool.setuptools.package-data]

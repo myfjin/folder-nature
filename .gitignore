@@ -34,3 +34,14 @@ env/
 # Distribution
 *.tar.gz
 *.whl
+
+# v-next mark layer — NEVER commit private signing keys or seller-side registries
+*.key
+*.key.pub
+*.seed
+signing.key*
+sales*.json
+sale-registry*.json
+.folder-mark-ledger.yaml
+# (MANIFEST.aura / MANIFEST.aura.sig / aura-signing.pub ARE meant to be published
+#  with a signed release, so they are intentionally NOT ignored.)
