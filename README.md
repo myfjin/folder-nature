@@ -142,7 +142,76 @@ custom values (extensibility hatch). Known types:
 3. **Schema-versioned.** Future schema bumps migrate cleanly.
 4. **AI-readable.** Optional integration with LLM assistants — they query the
    folder's nature before interacting with its contents.
-5. **Open from day one.** MIT licensed. Code reviewable. Schema documented.
+5. **Open from day one.** Apache-2.0 on the `v-next` branch (adds a patent
+   grant covering the signing/watermark work; the published `0.1.0` core is
+   MIT). Code reviewable. Schema documented.
+
+## The mark layer (`v-next`) — attribution + authenticity, never prevention
+
+The `v-next` branch adds the layer that lets a folder of work be *sold with
+attribution*: a configurable trademark, an invisible-and-visible watermark, a
+cooperative copy tool, leak tracing, and cryptographic file signing.
+
+**The load-bearing truth, stated up front:** you **cannot** prevent someone
+copying files on their own disk — `cp` beats any in-file mechanism, and we have
+zero visibility into a customer's machine. Nothing here pretends otherwise.
+What it *does* is make a copy **checkable**:
+
+| Mechanism | The question it answers | What it is **not** |
+|-----------|-------------------------|--------------------|
+| **Watermark** | *Who* bought this copy? | Not copy protection |
+| **Signature** | Is this *genuinely* ours and *unaltered*? | Not copy protection |
+| **Copy-limiter** | Cooperative numbering for honest customers | Not anti-piracy |
+| **Leak scan** | Trace a found copy → the buyer → their accepted license | Not surveillance of your disk |
+
+### Watermark — three redundant channels
+
+A mark is embedded across three channels with disjoint failure modes, so an
+honest reformat can't silently strip it, and the file **still runs** after
+stamping (guaranteed for Python by an in-process `compile()` before write):
+
+- **zero-width** — invisible steganographic bits (survives every mainstream
+  code formatter; killed only by an explicit "strip zero-width unicode" pass).
+- **comment-id** — a visible attribution comment `△ folder-nature mark ⟦…⟧`
+  (survives reformatting; killed by "remove all comments").
+- **structural** — a real language constant, e.g. `_AURA_MARK = "…"` (survives
+  comment-stripping *and* whitespace reformatting; killed by dead-code removal).
+
+Extraction succeeds if **any one** channel yields a CRC-valid payload; a channel
+present but CRC-broken, or channels that disagree, is reported as **tampered**.
+The master original is number `0`; per-customer numbers are stamped **at sale**,
+never at authoring (they encode the buyer). Tiers: `personal` 1–3 · `team` 0–9 ·
+`enterprise` base36 ≥ 10.
+
+### Signing — origin + integrity (distinct from the watermark)
+
+`sign` hashes every file (sha256) into a manifest and signs it with **Ed25519**
+(pure-Python, vendored, verified against the RFC 8032 test vectors — see
+`tests/test_ed25519_vectors.py`). The private key is written mode `600` and is
+**never** committed (the tool refuses to write a key inside a git repo). `verify`
+checks the signature against a *trusted published* public key, then re-hashes the
+tree and reports **"authentic + unaltered"** or names exactly what differs
+(modified / missing / added). Origin + integrity — not prevention.
+
+### The enforcement chain
+
+A watermark has teeth only if a **license was accepted**. The chain is:
+license presented → buyer accepts at purchase (recorded, with the license text
+hashed) → the copy is watermarked to that buyer → if a leak is later *found*, the
+scan traces the number to the buyer and emits a claim **citing the license they
+accepted**. Leak claims fire on found content, **never** on a customer's local
+copying. (License *texts* are a deliberate later decision; the mechanism ships
+now with a clearly-flagged placeholder.)
+
+```bash
+folder-nature trademark ./lib --set "Your Mark" --tier team   # configurable name (no default)
+folder-nature stamp ./lib --number 0                          # master watermark; files still run
+folder-nature mark-show ./lib/file.py                         # extract + verify a mark
+folder-nature keygen --out ~/.config/folder-nature/signing.key
+folder-nature sign ./lib --key ~/.config/folder-nature/signing.key
+folder-nature verify ./lib --pubkey ~/.config/folder-nature/signing.key.pub
+folder-nature scan ./suspect_dir --registry ~/private/sales.json   # trace + claim
+```
 
 ## Roadmap
 
@@ -153,7 +222,8 @@ custom values (extensibility hatch). Known types:
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+`v-next` branch: Apache-2.0. See [LICENSE](LICENSE). (The published `0.1.0`
+release on `main` remains MIT.)
 
 ## Development
 
@@ -165,8 +235,11 @@ python3 -m venv .venv
 .venv/bin/pytest
 ```
 
-Test suite: 66 tests covering schema validation, filesystem operations,
-search, and CLI integration. Should run in <1 second.
+Test suite: 66 core tests (schema validation, filesystem operations, search,
+CLI integration) plus the `v-next` mark-layer suite — Ed25519 RFC-8032 vectors,
+watermark gate-compatibility, reformat survival (including a real `black` run),
+extractability, tamper detection, copy-limiter tiers, sign/verify round-trip and
+tamper-fails-verify, and the sale→leak→claim enforcement chain.
 
 ## Origin
 

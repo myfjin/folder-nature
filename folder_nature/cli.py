@@ -301,6 +301,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     sub.add_parser("version", help="Print version").set_defaults(func=cmd_version)
 
+    # v-next: the mark layer (trademark / watermark / copy / sign / verify / scan).
+    # Attribution + authenticity, never prevention. See folder_nature.mark.
+    from .mark.cli_mark import add_mark_subcommands
+    add_mark_subcommands(sub)
+
     return parser
 
 
