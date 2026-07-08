@@ -102,8 +102,19 @@ def test_idempotent_restamp_does_not_accumulate():
     once = wm.stamp_text(PY_SIMPLE, _mark("1"), wm._LANGS[".py"])
     twice = wm.stamp_text(once, _mark("2"), wm._LANGS[".py"])
     # only one mark block; re-stamp replaced rather than appended
-    assert twice.count("folder-nature mark ⟦") == 1
+    assert twice.count("⟦AE1.") == 1
     assert wm.verify_text(twice).payload.number == "2"
+
+
+def test_visible_attribution_label_is_human_readable():
+    # Steward's flag: the honest majority must SEE who it belongs to, no tooling.
+    payload = WatermarkPayload(trademark="AURA Pattern Library",
+                               company="Reality Optimizer", number="0")
+    stamped = wm.stamp_text(PY_SIMPLE, payload, wm._LANGS[".py"])
+    assert "AURA Pattern Library" in stamped
+    assert "© Reality Optimizer" in stamped
+    # and it still extracts + the label change didn't break tracing
+    assert wm.verify_text(stamped).status == "authentic"
 
 
 def test_non_python_languages_stamp_and_extract():
