@@ -1,0 +1,17 @@
+folder-nature
+Copyright 2026 Illia Hladkyi (Reality Optimizer)
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+this file except in compliance with the License. A copy of the License is in the
+LICENSE file, or at http://www.apache.org/licenses/LICENSE-2.0.
+
+(The published 0.1.0 release on the `main` branch is MIT-licensed; the `v-next`
+branch and 0.2.x onward are Apache-2.0.)
+
+--------------------------------------------------------------------------------
+Bundled third-party code:
+
+* folder_nature/_ed25519.py — a pure-Python Ed25519 (RFC 8032) signing
+  implementation adapted for Python 3 from Daniel J. Bernstein's public-domain
+  reference implementation (https://ed25519.cr.yp.to/software.html). Public
+  domain; verified against the RFC 8032 test vectors.
