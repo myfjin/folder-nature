@@ -122,7 +122,9 @@ def is_supported(path: Path) -> bool:
 
 # ── channel B / C regexes (extraction) ───────────────────────────────────────
 
-_COMMENT_TAG_RE = re.compile(r"folder-nature mark ⟦(AE1\.[A-Z2-7]+)⟧")
+# Match the token inside ⟦…⟧ regardless of the visible human-readable text that
+# precedes it, so the attribution label can change without breaking extraction.
+_COMMENT_TAG_RE = re.compile(r"⟦(AE1\.[A-Z2-7]+)⟧")
 _STRUCT_RE = re.compile(r'"AE1\.([A-Z2-7]+)"')
 
 
@@ -183,10 +185,15 @@ def _generic_insert_line(src: str, lang: _Lang) -> int:
     return i
 
 
-def _channel_lines(token: str, lang: _Lang) -> List[str]:
+def _channel_lines(token: str, lang: _Lang,
+                   payload: "WatermarkPayload") -> List[str]:
     c = lang.line_comment
+    # Channel B is the VISIBLE attribution the honest majority reads without any
+    # tooling: the human-facing name + owner, then the opaque tracing token.
+    owner = f" — © {payload.company}" if payload.company and payload.company != payload.trademark else ""
+    label = f"{payload.trademark}{owner}"
     lines = [
-        f"{c} {PYRAMID} folder-nature mark ⟦{_STRUCT_PREFIX}{token}⟧",  # B
+        f"{c} {PYRAMID} {label} ⟦{_STRUCT_PREFIX}{token}⟧",                      # B
         f"{c} {_zw_encode(token)}",                                              # A
     ]
     if lang.const_tmpl:                                                          # C
@@ -200,7 +207,7 @@ def strip_marks(src: str, lang: _Lang) -> str:
     out = []
     for ln in src.splitlines(keepends=False):
         stripped = ln.strip()
-        if "folder-nature mark ⟦" in ln:                 # channel B
+        if _COMMENT_TAG_RE.search(ln):                   # channel B (⟦AE1.…⟧)
             continue
         if _ZWS in ln and set(ln) <= set(_ZW_CHARS + lang.line_comment + " "):  # channel A line
             continue
@@ -236,7 +243,7 @@ def stamp_text(src: str, payload: WatermarkPayload, lang: _Lang,
         after = _generic_insert_line(src, lang)
 
     lines = src.splitlines(keepends=False)
-    channel_lines = _channel_lines(token, lang)
+    channel_lines = _channel_lines(token, lang, payload)
     new_lines = lines[:after] + channel_lines + lines[after:]
     result = "\n".join(new_lines)
     if src.endswith("\n") or not src:
