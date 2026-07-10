@@ -210,8 +210,27 @@ folder-nature mark-show ./lib/file.py                         # extract + verify
 folder-nature keygen --out ~/.config/folder-nature/signing.key
 folder-nature sign ./lib --key ~/.config/folder-nature/signing.key
 folder-nature verify ./lib --pubkey ~/.config/folder-nature/signing.key.pub
+folder-nature verify ./tree --root --pubkey <key>   # self-validate a WHOLE tree → one verdict
 folder-nature scan ./suspect_dir --registry ~/private/sales.json   # trace + claim
 ```
+
+### Root orchestration — a self-validating tree
+
+`folder-nature verify <root> --root` turns a folder-nature tree into an
+**orchestrator** that signs off with one GREEN/RED verdict only if *everything*
+checks, top-down: **structure** (every `.folder-nature` schema-valid, tree matches
+its declared layout, folder/file counts reported) · **folder marks** (every folder
+carries a valid `.folder-mark.yaml`) · **file signatures + watermarks** (every
+*file's* Ed25519 signature and watermark verifies — not just folders) · **parity**
+(the signed manifest matches disk exactly — no added/missing/modified) · optional
+**selftests** (`--selftest` runs a declared, deterministic per-file run-gate).
+
+It discovers signed subtrees by finding `MANIFEST.aura` — nothing is hard-coded —
+so any folder-nature root can self-validate. A tampered file, a missing signature,
+catalog↔disk drift, an invalid tag, or a failing selftest each fails loudly and
+names itself. Optional root declaration in `.folder-nature-root.yaml`. Honest
+scope: this proves authenticity + integrity + structure — it does **not** prevent
+copying.
 
 ## Roadmap
 
