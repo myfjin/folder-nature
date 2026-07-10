@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "folder-nature"
-version = "0.2.0.dev0"
+version = "0.2.0"
 description = "Semantic identity for filesystem folders — folders become conversation partners"
 readme = "README.md"
 license = {text = "Apache-2.0"}

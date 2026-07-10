@@ -142,9 +142,9 @@ custom values (extensibility hatch). Known types:
 3. **Schema-versioned.** Future schema bumps migrate cleanly.
 4. **AI-readable.** Optional integration with LLM assistants — they query the
    folder's nature before interacting with its contents.
-5. **Open from day one.** Apache-2.0 on the `v-next` branch (adds a patent
-   grant covering the signing/watermark work; the published `0.1.0` core is
-   MIT). Code reviewable. Schema documented.
+5. **Open from day one.** Apache-2.0 from 0.2.0 onward (adds a patent grant
+   covering the signing/watermark work; the `0.1.0` release remains MIT).
+   Code reviewable. Schema documented.
 
 ## The mark layer (`v-next`) — attribution + authenticity, never prevention
 
@@ -241,8 +241,8 @@ copying.
 
 ## License
 
-`v-next` branch: Apache-2.0. See [LICENSE](LICENSE). (The published `0.1.0`
-release on `main` remains MIT.)
+Apache-2.0 from 0.2.0 onward. See [LICENSE](LICENSE). (The `0.1.0` release
+remains MIT.)
 
 ## Development
 
