@@ -27,6 +27,7 @@ from .config import (MarkConfig, MarkConfigError, TIERS, load_config, save_confi
 from .payload import WatermarkPayload
 from . import watermark as wm
 from . import signing, copy_limiter, sale as sale_mod, leak as leak_mod
+from . import orchestrator as orch
 
 
 # ── shared helpers ────────────────────────────────────────────────────────────
@@ -201,6 +202,17 @@ def cmd_sign(args: argparse.Namespace) -> int:
 def cmd_verify(args: argparse.Namespace) -> int:
     directory = Path(args.dir).resolve()
     trusted = _read_pubkey(args.pubkey)
+
+    # ROOT mode: top-down self-validation of the whole tree, one verdict.
+    if getattr(args, "root", False):
+        report = orch.orchestrate(directory, trusted,
+                                  run_selftests=getattr(args, "selftest", False))
+        if trusted is None:
+            print("WARNING: no trusted --pubkey; signatures checked against the "
+                  "manifest's own key (integrity, not authorship).", file=sys.stderr)
+        print(report.render())
+        return 0 if report.ok else 1
+
     try:
         rep = signing.verify_directory(directory, trusted)
     except signing.SigningError as e:
@@ -303,9 +315,14 @@ def add_mark_subcommands(sub) -> None:
     p.add_argument("--trademark", help="Override/supply trademark")
     p.set_defaults(func=cmd_sign)
 
-    p = sub.add_parser("verify", help="Verify signature + integrity of a signed directory")
+    p = sub.add_parser("verify", help="Verify a signed directory; --root self-validates a whole tree")
     p.add_argument("dir")
     p.add_argument("--pubkey", help="Trusted public key (hex or file). Omit = consistency-only.")
+    p.add_argument("--root", action="store_true",
+                   help="ROOT mode: top-down orchestration (structure + folder marks + "
+                        "every file's signature & watermark + catalog↔disk parity) → one verdict")
+    p.add_argument("--selftest", action="store_true",
+                   help="With --root: also run declared per-file selftests (deterministic, opt-in)")
     p.set_defaults(func=cmd_verify)
 
     p = sub.add_parser("scan", help="Leak-scan content -> trace buyer -> copyright claim")
