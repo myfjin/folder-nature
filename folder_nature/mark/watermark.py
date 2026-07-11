@@ -88,6 +88,9 @@ class _Lang:
     # rust needs inner attributes (#![..]) and //! doc-comments kept on top.
     rust_like: bool = False
     python_like: bool = False
+    # go is strict: package clause first, imports next, then decls — so the
+    # structural const (a package-level var) must land AFTER package + imports.
+    go_like: bool = False
 
 
 _LANGS: Dict[str, _Lang] = {
@@ -96,7 +99,7 @@ _LANGS: Dict[str, _Lang] = {
     ".r":   _Lang("#", ".aura_mark <- {s}"),
     ".R":   _Lang("#", ".aura_mark <- {s}"),
     ".rs":  _Lang("//", "const _AURA_MARK: &str = {s};", rust_like=True),
-    ".go":  _Lang("//", "var _auraMark = {s}"),
+    ".go":  _Lang("//", "var _auraMark = {s}", go_like=True),
     ".js":  _Lang("//", "const _AURA_MARK = {s};"),
     ".mjs": _Lang("//", "const _AURA_MARK = {s};"),
     ".ts":  _Lang("//", "const _AURA_MARK = {s};"),
@@ -185,6 +188,40 @@ def _generic_insert_line(src: str, lang: _Lang) -> int:
     return i
 
 
+def _go_insert_line(src: str) -> int:
+    """Return the line after which it is safe to insert in a Go file.
+
+    Go's grammar is strict: the ``package`` clause must come first, then any
+    import declarations, and only then other top-level declarations. So the
+    structural ``var`` MUST land after the package clause and the whole import
+    block, or the file will not compile (``expected 'package', found 'var'``).
+    """
+    lines = src.splitlines()
+    n = len(lines)
+    i = 0
+    while i < n and not lines[i].lstrip().startswith("package "):
+        i += 1
+    if i >= n:                                    # no package clause -> fallback
+        return _generic_insert_line(src, _LANGS[".go"])
+    i += 1                                         # move past 'package X'
+    while i < n:
+        s = lines[i].strip()
+        if s == "" or s.startswith("//") or s.startswith("/*"):
+            i += 1
+            continue
+        if s.startswith("import ("):               # grouped block -> skip to ')'
+            i += 1
+            while i < n and lines[i].strip() != ")":
+                i += 1
+            i += 1
+            continue
+        if s.startswith("import "):                # single-line import
+            i += 1
+            continue
+        break
+    return i
+
+
 def _channel_lines(token: str, lang: _Lang,
                    payload: "WatermarkPayload") -> List[str]:
     c = lang.line_comment
@@ -239,6 +276,8 @@ def stamp_text(src: str, payload: WatermarkPayload, lang: _Lang,
 
     if lang.python_like:
         after = _python_insert_line(src)
+    elif lang.go_like:
+        after = _go_insert_line(src)
     else:
         after = _generic_insert_line(src, lang)
 
@@ -256,7 +295,35 @@ def stamp_text(src: str, payload: WatermarkPayload, lang: _Lang,
             raise StampError(
                 f"stamping {filename} would break Python parse: {e}"
             ) from e
+    elif lang.go_like:
+        _assert_go_builds(result, filename)
     return result
+
+
+def _assert_go_builds(result: str, filename: str) -> None:
+    """Best-effort gate-check for Go: if the ``go`` toolchain is present, ensure
+    the stamped source still builds. No toolchain -> skip (can't verify)."""
+    import shutil as _sh
+    import subprocess as _sp
+    import tempfile as _tf
+    import os as _os
+    if not _sh.which("go"):
+        return
+    tmp = _tf.mkdtemp()
+    try:
+        gofile = _os.path.join(tmp, "stamped.go")
+        with open(gofile, "w", encoding="utf-8") as fh:
+            fh.write(result)
+        # vet the syntax/build cheaply; only care about a hard build failure.
+        r = _sp.run(["go", "build", "-o", _os.path.join(tmp, "out"), gofile],
+                    capture_output=True, text=True, timeout=120)
+        if r.returncode != 0:
+            raise StampError(
+                f"stamping {filename} would break Go build: "
+                f"{(r.stderr or r.stdout).strip().splitlines()[-1] if (r.stderr or r.stdout).strip() else 'build failed'}"
+            )
+    finally:
+        _sh.rmtree(tmp, ignore_errors=True)
 
 
 def stamp_file(path: Path, payload: WatermarkPayload) -> bool:
