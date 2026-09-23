@@ -242,6 +242,12 @@ Shipped:
 - **`0.2.1`** — the Go watermark fix. The structural channel emitted its constant
   before `package` and `import`, which is not valid Go, so the mark could not be
   embedded in a Go source file at all.
+- **`0.2.3`** — a signed manifest carries the **UTC** date. It recorded the *local*
+  date, so two machines signing the same folder could disagree about what day it
+  was — and the signature would faithfully attest both. Nothing reads the field and
+  earlier manifests still verify, so only new ones differ. Also: the zero-width
+  alphabet is written as escapes (`"\u200b"`), so the source says which characters
+  the watermark is made of instead of leaving only a comment to tell you.
 - **`0.2.2`** — re-stamping is idempotent again. The mark line used to be recognised
   by asking a *character-set* question — "does this line contain only comment
   characters, spaces and zero-width characters?" — which is a proxy for "is this a
@@ -261,7 +267,7 @@ promise about timing.
 
 ## Status, and how we work
 
-On PyPI since **2026-07-05**; the newest release is **`0.2.2`**. The tool is small on
+On PyPI since **2026-07-05**; the newest release is **`0.2.3`**. The tool is small on
 purpose — one runtime dependency (PyYAML), no build-time code generation — and the
 part that is not small is the mark layer, which is where the care went.
 
