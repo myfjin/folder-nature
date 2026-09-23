@@ -57,6 +57,9 @@ folder-nature = "folder_nature.cli:main"
 Homepage = "https://github.com/myfjin/folder-nature"
 Repository = "https://github.com/myfjin/folder-nature"
 Issues = "https://github.com/myfjin/folder-nature/issues"
+Changelog = "https://github.com/myfjin/folder-nature/releases"
+Contributing = "https://github.com/myfjin/folder-nature/blob/main/CONTRIBUTING.md"
+Security = "https://github.com/myfjin/folder-nature/blob/main/SECURITY.md"
 
 [tool.setuptools]
 packages = ["folder_nature", "folder_nature.mark"]
