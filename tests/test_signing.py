@@ -1,5 +1,8 @@
 """Signing: sign/verify round-trip, tamper-fails-verify, key handling."""
 
+import os
+import time
+
 import pytest
 
 from folder_nature.mark import signing
@@ -9,6 +12,42 @@ def _make_lib(root):
     (root / "a.py").write_text("def a():\n    return 1\n", encoding="utf-8")
     (root / "sub").mkdir()
     (root / "sub" / "b.py").write_text("x = 2\n", encoding="utf-8")
+
+
+def test_the_manifest_date_does_not_follow_the_local_clock(tmp_path):
+    """A signed artifact must not carry a locale-dependent date.
+
+    ``Etc/GMT+12`` is UTC-12 and ``Pacific/Kiritimati`` is UTC+14. They are 26
+    hours apart, so their LOCAL DATES differ at every instant of every day. If the
+    manifest's date follows the local clock, these two runs cannot agree — and they
+    cannot agree by luck, either, which is what makes this deterministic rather
+    than a flake that only bites near midnight.
+
+    Two machines signing the same folder should not disagree about what day it was.
+    """
+    lib = tmp_path / "lib"
+    lib.mkdir()
+    _make_lib(lib)
+
+    original = os.environ.get("TZ")
+    try:
+        dates = {}
+        for label, tz in (("UTC-12", "Etc/GMT+12"), ("UTC+14", "Pacific/Kiritimati")):
+            os.environ["TZ"] = tz
+            time.tzset()
+            dates[label] = signing.build_manifest(lib, "Test", "ab" * 32)["created"]
+    finally:
+        # TZ is process-global state: restore it, or the next test inherits it.
+        if original is None:
+            os.environ.pop("TZ", None)
+        else:
+            os.environ["TZ"] = original
+        time.tzset()
+
+    assert dates["UTC-12"] == dates["UTC+14"], (
+        f"the manifest date followed the local clock: {dates['UTC-12']} under UTC-12, "
+        f"{dates['UTC+14']} under UTC+14"
+    )
 
 
 def test_sign_verify_roundtrip(tmp_path):
