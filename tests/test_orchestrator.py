@@ -2,15 +2,13 @@
 
 import sys
 
-import pytest
-
 from folder_nature.core import write_folder_nature
-from folder_nature.schema import FolderNature, Identity
-from folder_nature.mark import signing, orchestrator as orch
+from folder_nature.mark import orchestrator as orch
+from folder_nature.mark import signing
 from folder_nature.mark.config import MarkConfig, save_config
 from folder_nature.mark.payload import WatermarkPayload
 from folder_nature.mark.watermark import stamp_file
-
+from folder_nature.schema import FolderNature, Identity
 
 TM, CO = "Test Library", "Reality Optimizer"
 
@@ -23,10 +21,16 @@ def _green_tree(root, *, root_spec=None, selftest_bad=False):
 
     lib = root / "lib"
     lib.mkdir()
-    write_folder_nature(lib, FolderNature(
-        identity=Identity(name="lib", being="workspace", purpose="patterns")))
+    write_folder_nature(
+        lib,
+        FolderNature(
+            identity=Identity(name="lib", being="workspace", purpose="patterns")
+        ),
+    )
     save_config(lib, MarkConfig(trademark=TM, company=CO, tier="team"))
-    (lib / "a.py").write_text("def a():\n    return 1\nassert a() == 1\n", encoding="utf-8")
+    (lib / "a.py").write_text(
+        "def a():\n    return 1\nassert a() == 1\n", encoding="utf-8"
+    )
     (lib / "b.py").write_text("x = 2\nassert x == 2\n", encoding="utf-8")
     if selftest_bad:
         (lib / "c.py").write_text("import sys\nsys.exit(1)\n", encoding="utf-8")
@@ -44,12 +48,14 @@ def test_green_tree_passes(tmp_path):
     assert rep.ok, rep.render()
     assert rep.signed_subtrees == ["lib"]
     assert rep.files_signed == 2 and rep.files_watermarked == 2
-    assert rep.folders >= 2 and rep.files >= 2       # counts reported
+    assert rep.folders >= 2 and rep.files >= 2  # counts reported
 
 
 def test_tampered_file_fails_and_names_itself(tmp_path):
     pub = _green_tree(tmp_path / "t")
-    (tmp_path / "t" / "lib" / "a.py").write_text("def a():\n    return 999\n", encoding="utf-8")
+    (tmp_path / "t" / "lib" / "a.py").write_text(
+        "def a():\n    return 999\n", encoding="utf-8"
+    )
     rep = orch.orchestrate(tmp_path / "t", pub)
     assert not rep.ok
     assert any("a.py" in f for f in rep.failures)
@@ -77,9 +83,13 @@ def test_tampered_watermark_fails_even_when_resigned(tmp_path):
     must still catch the watermark tamper (files, not just folders)."""
     _green_tree(tmp_path / "t")
     a = tmp_path / "t" / "lib" / "a.py"
-    a.write_text(a.read_text(encoding="utf-8").replace("AE1.", "AE1.Z", 1), encoding="utf-8")
+    a.write_text(
+        a.read_text(encoding="utf-8").replace("AE1.", "AE1.Z", 1), encoding="utf-8"
+    )
     seed, pub = signing.generate_keypair()
-    signing.sign_directory(tmp_path / "t" / "lib", TM, seed)   # signature now valid again
+    signing.sign_directory(
+        tmp_path / "t" / "lib", TM, seed
+    )  # signature now valid again
     rep = orch.orchestrate(tmp_path / "t", pub)
     assert not rep.ok
     assert any("TAMPERED" in f or "watermark" in f for f in rep.failures)
@@ -89,8 +99,11 @@ def test_invalid_folder_nature_tag_fails(tmp_path):
     pub = _green_tree(tmp_path / "t")
     # write a schema-invalid .folder-nature (tags must be a list of strings)
     bad = tmp_path / "t" / "lib" / ".folder-nature"
-    bad.write_text('schema_version: "1.0"\nidentity:\n  name: x\n  being: workspace\n'
-                   '  purpose: y\ntags: "not-a-list"\n', encoding="utf-8")
+    bad.write_text(
+        'schema_version: "1.0"\nidentity:\n  name: x\n  being: workspace\n'
+        '  purpose: y\ntags: "not-a-list"\n',
+        encoding="utf-8",
+    )
     # re-sign so only the tag-validity check trips, not parity
     seed, pub = signing.generate_keypair()
     signing.sign_directory(tmp_path / "t" / "lib", TM, seed)
@@ -100,8 +113,9 @@ def test_invalid_folder_nature_tag_fails(tmp_path):
 
 
 def test_require_nature_flags_missing(tmp_path):
-    pub = _green_tree(tmp_path / "t",
-                      root_spec="orchestrator: true\nrequire_nature: true\n")
+    pub = _green_tree(
+        tmp_path / "t", root_spec="orchestrator: true\nrequire_nature: true\n"
+    )
     # the root itself has no .folder-nature -> require_nature trips
     rep = orch.orchestrate(tmp_path / "t", pub)
     assert not rep.ok
@@ -109,8 +123,11 @@ def test_require_nature_flags_missing(tmp_path):
 
 
 def test_selftest_failure_named(tmp_path):
-    pub = _green_tree(tmp_path / "t", selftest_bad=True,
-                      root_spec='orchestrator: true\nselftest:\n  ".py": "%s"\n' % sys.executable)
+    pub = _green_tree(
+        tmp_path / "t",
+        selftest_bad=True,
+        root_spec='orchestrator: true\nselftest:\n  ".py": "%s"\n' % sys.executable,
+    )
     # re-sign to include c.py cleanly
     seed, pub = signing.generate_keypair()
     signing.sign_directory(tmp_path / "t" / "lib", TM, seed)
@@ -121,8 +138,10 @@ def test_selftest_failure_named(tmp_path):
 
 
 def test_selftests_pass_on_green(tmp_path):
-    pub = _green_tree(tmp_path / "t",
-                      root_spec='orchestrator: true\nselftest:\n  ".py": "%s"\n' % sys.executable)
+    pub = _green_tree(
+        tmp_path / "t",
+        root_spec='orchestrator: true\nselftest:\n  ".py": "%s"\n' % sys.executable,
+    )
     rep = orch.orchestrate(tmp_path / "t", pub, run_selftests=True)
     assert rep.ok
     assert rep.selftests_run == 2 and rep.selftests_passed == 2

@@ -10,7 +10,6 @@ import pytest
 from folder_nature.mark import watermark as wm
 from folder_nature.mark.payload import WatermarkPayload
 
-
 PY_HARD = '''#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """Module docstring must stay first."""
@@ -31,8 +30,9 @@ PY_SIMPLE = "x = 41\nprint(x + 1)\n"
 
 
 def _mark(number="0"):
-    return WatermarkPayload(trademark="Aura Elements", company="Aura Elements",
-                            number=number)
+    return WatermarkPayload(
+        trademark="Aura Elements", company="Aura Elements", number=number
+    )
 
 
 def test_stamp_keeps_python_parseable():
@@ -69,18 +69,22 @@ def test_survives_whitespace_reformat():
 
 def test_survives_comment_stripping_via_structural_channel():
     stamped = wm.stamp_text(PY_SIMPLE, _mark(), wm._LANGS[".py"])
-    no_comments = "\n".join(l for l in stamped.splitlines()
-                            if not l.lstrip().startswith("#"))
+    no_comments = "\n".join(
+        l for l in stamped.splitlines() if not l.lstrip().startswith("#")
+    )
     rep = wm.verify_text(no_comments)
     assert rep.is_marked
-    assert "C" in rep.channels_valid   # structural constant carried it
+    assert "C" in rep.channels_valid  # structural constant carried it
 
 
-@pytest.mark.skipif(shutil.which("black") is None and
-                    __import__("importlib").util.find_spec("black") is None,
-                    reason="black not installed")
+@pytest.mark.skipif(
+    shutil.which("black") is None
+    and __import__("importlib").util.find_spec("black") is None,
+    reason="black not installed",
+)
 def test_survives_black_reformat(tmp_path):
     import black  # noqa: F401
+
     f = tmp_path / "b.py"
     f.write_text(PY_HARD, encoding="utf-8")
     wm.stamp_file(f, _mark())
@@ -108,8 +112,9 @@ def test_idempotent_restamp_does_not_accumulate():
 
 def test_visible_attribution_label_is_human_readable():
     # Steward's flag: the honest majority must SEE who it belongs to, no tooling.
-    payload = WatermarkPayload(trademark="AURA Pattern Library",
-                               company="Reality Optimizer", number="0")
+    payload = WatermarkPayload(
+        trademark="AURA Pattern Library", company="Reality Optimizer", number="0"
+    )
     stamped = wm.stamp_text(PY_SIMPLE, payload, wm._LANGS[".py"])
     assert "AURA Pattern Library" in stamped
     assert "© Reality Optimizer" in stamped
@@ -124,7 +129,9 @@ def test_go_structural_const_lands_after_package():
     out = wm.stamp_text(go, _mark("0"), wm._LANGS[".go"], "x.go")
     lines = out.splitlines()
     pkg_i = next(i for i, l in enumerate(lines) if l.strip().startswith("package "))
-    var_i = next(i for i, l in enumerate(lines) if l.strip().startswith("var _auraMark"))
+    var_i = next(
+        i for i, l in enumerate(lines) if l.strip().startswith("var _auraMark")
+    )
     assert var_i > pkg_i, "Go structural const must come after the package clause"
     assert wm.verify_text(out).status == "authentic"
 
@@ -132,19 +139,24 @@ def test_go_structural_const_lands_after_package():
 @pytest.mark.skipif(shutil.which("go") is None, reason="go not installed")
 def test_go_stamped_file_still_builds(tmp_path):
     f = tmp_path / "m.go"
-    f.write_text('package main\n\nimport "fmt"\n\nfunc main() { fmt.Println(1) }\n',
-                 encoding="utf-8")
+    f.write_text(
+        'package main\n\nimport "fmt"\n\nfunc main() { fmt.Println(1) }\n',
+        encoding="utf-8",
+    )
     wm.stamp_file(f, _mark("0"))
-    r = subprocess.run(["go", "build", "-o", str(tmp_path / "out"), str(f)],
-                       capture_output=True)
+    r = subprocess.run(
+        ["go", "build", "-o", str(tmp_path / "out"), str(f)], capture_output=True
+    )
     assert r.returncode == 0, "stamped Go must still compile"
 
 
 def test_non_python_languages_stamp_and_extract():
-    for ext, sample in [(".rs", "fn main() { println!(\"hi\"); }\n"),
-                        (".go", "package main\nfunc main() {}\n"),
-                        (".js", "console.log(1);\n"),
-                        (".r", "x <- 1\nprint(x)\n")]:
+    for ext, sample in [
+        (".rs", 'fn main() { println!("hi"); }\n'),
+        (".go", "package main\nfunc main() {}\n"),
+        (".js", "console.log(1);\n"),
+        (".r", "x <- 1\nprint(x)\n"),
+    ]:
         lang = wm._LANGS[ext]
         stamped = wm.stamp_text(sample, _mark("0"), lang, "s" + ext)
         assert wm.verify_text(stamped).status == "authentic", ext

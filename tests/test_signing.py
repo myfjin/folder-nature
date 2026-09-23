@@ -12,7 +12,8 @@ def _make_lib(root):
 
 
 def test_sign_verify_roundtrip(tmp_path):
-    lib = tmp_path / "lib"; lib.mkdir()
+    lib = tmp_path / "lib"
+    lib.mkdir()
     _make_lib(lib)
     seed, pub = signing.generate_keypair()
     signing.sign_directory(lib, "Aura Elements", seed)
@@ -22,7 +23,8 @@ def test_sign_verify_roundtrip(tmp_path):
 
 
 def test_modified_file_fails_verify(tmp_path):
-    lib = tmp_path / "lib"; lib.mkdir()
+    lib = tmp_path / "lib"
+    lib.mkdir()
     _make_lib(lib)
     seed, pub = signing.generate_keypair()
     signing.sign_directory(lib, "Aura Elements", seed)
@@ -34,12 +36,13 @@ def test_modified_file_fails_verify(tmp_path):
 
 
 def test_added_and_missing_detected(tmp_path):
-    lib = tmp_path / "lib"; lib.mkdir()
+    lib = tmp_path / "lib"
+    lib.mkdir()
     _make_lib(lib)
     seed, pub = signing.generate_keypair()
     signing.sign_directory(lib, "Aura Elements", seed)
-    (lib / "c.py").write_text("y = 3\n", encoding="utf-8")   # added
-    (lib / "a.py").unlink()                                   # missing
+    (lib / "c.py").write_text("y = 3\n", encoding="utf-8")  # added
+    (lib / "a.py").unlink()  # missing
     rep = signing.verify_directory(lib, pub)
     assert not rep.ok
     assert "c.py" in rep.added
@@ -47,7 +50,8 @@ def test_added_and_missing_detected(tmp_path):
 
 
 def test_wrong_trusted_key_fails(tmp_path):
-    lib = tmp_path / "lib"; lib.mkdir()
+    lib = tmp_path / "lib"
+    lib.mkdir()
     _make_lib(lib)
     seed, _ = signing.generate_keypair()
     _, other_pub = signing.generate_keypair()
@@ -58,7 +62,8 @@ def test_wrong_trusted_key_fails(tmp_path):
 
 
 def test_forged_signature_fails(tmp_path):
-    lib = tmp_path / "lib"; lib.mkdir()
+    lib = tmp_path / "lib"
+    lib.mkdir()
     _make_lib(lib)
     seed, pub = signing.generate_keypair()
     signing.sign_directory(lib, "Aura Elements", seed)
@@ -76,6 +81,7 @@ def test_private_key_written_mode_600(tmp_path):
     key = tmp_path / "signing.key"
     signing.write_private_key(seed, key)
     import stat
+
     mode = stat.S_IMODE(key.stat().st_mode)
     assert mode == 0o600
 

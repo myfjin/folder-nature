@@ -35,35 +35,49 @@ from __future__ import annotations
 import subprocess
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional
 
 import yaml
 
 from ..core import NATURE_FILENAME, read_folder_nature
 from ..schema import SchemaError
+from . import signing
+from . import watermark as wm
 from .config import MARK_CONFIG_FILENAME, MarkConfigError, load_config
-from . import signing, watermark as wm
-
 
 ROOT_SPEC_FILENAME = ".folder-nature-root.yaml"
 
 # directories never walked; artifacts never counted as content
-_SKIP_DIRS = {".git", ".hg", ".svn", "__pycache__", ".pytest_cache", ".venv",
-              "node_modules", ".mypy_cache"}
-_SKIP_FILES = {signing.MANIFEST_NAME, signing.SIGNATURE_NAME, signing.PUBKEY_NAME,
-               NATURE_FILENAME, MARK_CONFIG_FILENAME, ROOT_SPEC_FILENAME, ".DS_Store"}
+_SKIP_DIRS = {
+    ".git",
+    ".hg",
+    ".svn",
+    "__pycache__",
+    ".pytest_cache",
+    ".venv",
+    "node_modules",
+    ".mypy_cache",
+}
+_SKIP_FILES = {
+    signing.MANIFEST_NAME,
+    signing.SIGNATURE_NAME,
+    signing.PUBKEY_NAME,
+    NATURE_FILENAME,
+    MARK_CONFIG_FILENAME,
+    ROOT_SPEC_FILENAME,
+    ".DS_Store",
+}
 
 
 @dataclass
 class RootSpec:
-    expect_dirs: List[str] = field(default_factory=list)
+    expect_dirs: list[str] = field(default_factory=list)
     require_nature: bool = False
     require_mark: bool = False
     require_watermark: bool = True
-    selftest: Dict[str, str] = field(default_factory=dict)
+    selftest: dict[str, str] = field(default_factory=dict)
 
     @classmethod
-    def load(cls, root: Path) -> "RootSpec":
+    def load(cls, root: Path) -> RootSpec:
         p = Path(root) / ROOT_SPEC_FILENAME
         if not p.exists():
             return cls()
@@ -84,12 +98,12 @@ class RootReport:
     files: int = 0
     natures_valid: int = 0
     marks_valid: int = 0
-    signed_subtrees: List[str] = field(default_factory=list)
+    signed_subtrees: list[str] = field(default_factory=list)
     files_signed: int = 0
     files_watermarked: int = 0
     selftests_run: int = 0
     selftests_passed: int = 0
-    failures: List[str] = field(default_factory=list)
+    failures: list[str] = field(default_factory=list)
 
     def fail(self, msg: str) -> None:
         self.ok = False
@@ -104,11 +118,15 @@ class RootReport:
             f"files signed: {self.files_signed}   watermarks verified: {self.files_watermarked}",
         ]
         if self.selftests_run:
-            lines.append(f"selftests: {self.selftests_passed}/{self.selftests_run} passed")
+            lines.append(
+                f"selftests: {self.selftests_passed}/{self.selftests_run} passed"
+            )
         lines.append("-" * 60)
         if self.ok:
-            lines.append("GREEN — the tree is valid, structured, marked and signed. "
-                         "(authenticity + integrity + structure; NOT copy-prevention)")
+            lines.append(
+                "GREEN — the tree is valid, structured, marked and signed. "
+                "(authenticity + integrity + structure; NOT copy-prevention)"
+            )
         else:
             lines.append(f"RED — {len(self.failures)} problem(s):")
             lines += [f"  - {f}" for f in self.failures[:40]]
@@ -127,8 +145,9 @@ def _walk(root: Path):
         yield p
 
 
-def orchestrate(root: Path, pubkey: Optional[str] = None,
-                run_selftests: bool = False) -> RootReport:
+def orchestrate(
+    root: Path, pubkey: str | None = None, run_selftests: bool = False
+) -> RootReport:
     """Validate a folder-nature root top-down. Returns a single-verdict report."""
     root = Path(root).resolve()
     spec = RootSpec.load(root)
@@ -145,13 +164,15 @@ def orchestrate(root: Path, pubkey: Optional[str] = None,
         nf = d / NATURE_FILENAME
         if nf.exists():
             try:
-                read_folder_nature(nf)            # schema-validates being + tags
+                read_folder_nature(nf)  # schema-validates being + tags
                 rep.natures_valid += 1
             except (SchemaError, yaml.YAMLError, OSError) as e:
                 rep.fail(f"{d.relative_to(root)}/{NATURE_FILENAME}: invalid — {e}")
         elif spec.require_nature:
-            rep.fail(f"{d.relative_to(root) or '.'}: missing {NATURE_FILENAME} "
-                     "(require_nature)")
+            rep.fail(
+                f"{d.relative_to(root) or '.'}: missing {NATURE_FILENAME} "
+                "(require_nature)"
+            )
 
     for want in spec.expect_dirs:
         if not (root / want).is_dir():
@@ -172,7 +193,9 @@ def orchestrate(root: Path, pubkey: Optional[str] = None,
         rel = sdir.relative_to(root).as_posix() or "."
         rep.signed_subtrees.append(rel)
         if spec.require_mark and not (sdir / MARK_CONFIG_FILENAME).exists():
-            rep.fail(f"{rel}: signed subtree missing {MARK_CONFIG_FILENAME} (require_mark)")
+            rep.fail(
+                f"{rel}: signed subtree missing {MARK_CONFIG_FILENAME} (require_mark)"
+            )
         try:
             vr = signing.verify_directory(sdir, pubkey)
         except signing.SigningError as e:
@@ -191,7 +214,9 @@ def orchestrate(root: Path, pubkey: Optional[str] = None,
             elif mr.status == "tampered":
                 rep.fail(f"{p.relative_to(root)}: watermark TAMPERED — {mr.detail}")
             elif spec.require_watermark:
-                rep.fail(f"{p.relative_to(root)}: watermark missing (require_watermark)")
+                rep.fail(
+                    f"{p.relative_to(root)}: watermark missing (require_watermark)"
+                )
 
     # ── SELFTESTS (opt-in, deterministic) ────────────────────────────────────
     if run_selftests and spec.selftest:
@@ -203,8 +228,9 @@ def orchestrate(root: Path, pubkey: Optional[str] = None,
                 continue
             rep.selftests_run += 1
             try:
-                rc = subprocess.run([runner, str(f)], capture_output=True,
-                                    timeout=120).returncode
+                rc = subprocess.run(
+                    [runner, str(f)], capture_output=True, timeout=120
+                ).returncode
             except (OSError, subprocess.TimeoutExpired) as e:
                 rc = -1
                 rep.fail(f"{f.relative_to(root)}: selftest error — {e}")

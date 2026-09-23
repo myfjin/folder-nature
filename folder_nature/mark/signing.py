@@ -28,10 +28,8 @@ import stat
 from dataclasses import dataclass, field
 from datetime import date
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from .. import _ed25519 as ed
-
 
 MANIFEST_NAME = "MANIFEST.aura"
 SIGNATURE_NAME = "MANIFEST.aura.sig"
@@ -40,9 +38,16 @@ MANIFEST_VERSION = 1
 
 # Never hash our own signing artifacts, VCS internals, or caches.
 _DEFAULT_EXCLUDES = {
-    MANIFEST_NAME, SIGNATURE_NAME, PUBKEY_NAME,
-    ".git", ".hg", ".svn", "__pycache__", ".pytest_cache",
-    ".DS_Store", ".venv",
+    MANIFEST_NAME,
+    SIGNATURE_NAME,
+    PUBKEY_NAME,
+    ".git",
+    ".hg",
+    ".svn",
+    "__pycache__",
+    ".pytest_cache",
+    ".DS_Store",
+    ".venv",
 }
 
 
@@ -59,7 +64,9 @@ def generate_keypair() -> tuple[str, str]:
     return seed.hex(), ed.publickey(seed).hex()
 
 
-def write_private_key(seed_hex: str, path: Path, *, allow_in_repo: bool = False) -> Path:
+def write_private_key(
+    seed_hex: str, path: Path, *, allow_in_repo: bool = False
+) -> Path:
     """Write the private seed to ``path`` at mode 600. Refuses a repo by default.
 
     A private signing key inside a version-controlled tree is the classic leak.
@@ -93,7 +100,7 @@ def read_private_key(path: Path) -> str:
 # ── manifest ──────────────────────────────────────────────────────────────────
 
 
-def _iter_files(root: Path, excludes: set) -> List[Path]:
+def _iter_files(root: Path, excludes: set) -> list[Path]:
     out = []
     for p in sorted(root.rglob("*")):
         if p.is_dir():
@@ -113,18 +120,21 @@ def _sha256(path: Path) -> str:
     return h.hexdigest()
 
 
-def build_manifest(root: Path, trademark: str, public_key_hex: str,
-                   *, excludes: Optional[set] = None) -> dict:
+def build_manifest(
+    root: Path, trademark: str, public_key_hex: str, *, excludes: set | None = None
+) -> dict:
     """Build the manifest dict for ``root`` (does not sign)."""
     root = Path(root)
     ex = set(_DEFAULT_EXCLUDES) | (excludes or set())
     files = []
     for p in _iter_files(root, ex):
-        files.append({
-            "path": p.relative_to(root).as_posix(),
-            "sha256": _sha256(p),
-            "bytes": p.stat().st_size,
-        })
+        files.append(
+            {
+                "path": p.relative_to(root).as_posix(),
+                "sha256": _sha256(p),
+                "bytes": p.stat().st_size,
+            }
+        )
     return {
         "manifest_version": MANIFEST_VERSION,
         "trademark": trademark,
@@ -137,12 +147,14 @@ def build_manifest(root: Path, trademark: str, public_key_hex: str,
 
 def canonical_bytes(manifest: dict) -> bytes:
     """Deterministic bytes signed/verified (sorted keys, compact)."""
-    return json.dumps(manifest, sort_keys=True, separators=(",", ":"),
-                      ensure_ascii=False).encode("utf-8")
+    return json.dumps(
+        manifest, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+    ).encode("utf-8")
 
 
-def sign_directory(root: Path, trademark: str, private_seed_hex: str,
-                   *, excludes: Optional[set] = None) -> Path:
+def sign_directory(
+    root: Path, trademark: str, private_seed_hex: str, *, excludes: set | None = None
+) -> Path:
     """Build + sign a manifest for ``root``. Writes manifest, sig, pubkey.
 
     Returns the manifest path. The public key is also written next to it so
@@ -156,7 +168,8 @@ def sign_directory(root: Path, trademark: str, private_seed_hex: str,
     sig = ed.sign(body, seed)
 
     (root / MANIFEST_NAME).write_text(
-        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        json.dumps(manifest, indent=2, ensure_ascii=False) + "\n", encoding="utf-8"
+    )
     (root / SIGNATURE_NAME).write_text(sig.hex() + "\n", encoding="utf-8")
     (root / PUBKEY_NAME).write_text(pub_hex + "\n", encoding="utf-8")
     return root / MANIFEST_NAME
@@ -172,9 +185,9 @@ class VerifyReport:
     ok: bool
     signature_valid: bool
     key_matches: bool
-    modified: List[str] = field(default_factory=list)
-    missing: List[str] = field(default_factory=list)
-    added: List[str] = field(default_factory=list)
+    modified: list[str] = field(default_factory=list)
+    missing: list[str] = field(default_factory=list)
+    added: list[str] = field(default_factory=list)
     detail: str = ""
 
     def summary(self) -> str:
@@ -194,8 +207,12 @@ class VerifyReport:
         return "; ".join(parts) or (self.detail or "verification failed")
 
 
-def verify_directory(root: Path, trusted_public_key_hex: Optional[str] = None,
-                     *, excludes: Optional[set] = None) -> VerifyReport:
+def verify_directory(
+    root: Path,
+    trusted_public_key_hex: str | None = None,
+    *,
+    excludes: set | None = None,
+) -> VerifyReport:
     """Verify signature + integrity of a signed ``root``.
 
     If ``trusted_public_key_hex`` is given, the signature is checked against it
@@ -215,8 +232,9 @@ def verify_directory(root: Path, trusted_public_key_hex: Optional[str] = None,
     embedded_key = manifest.get("public_key", "")
 
     verify_key = trusted_public_key_hex or embedded_key
-    key_matches = (trusted_public_key_hex is None
-                   or trusted_public_key_hex == embedded_key)
+    key_matches = (
+        trusted_public_key_hex is None or trusted_public_key_hex == embedded_key
+    )
     try:
         sig_valid = ed.verify(bytes.fromhex(sig_hex), body, bytes.fromhex(verify_key))
     except ValueError:
@@ -224,8 +242,9 @@ def verify_directory(root: Path, trusted_public_key_hex: Optional[str] = None,
 
     # re-hash the tree
     ex = set(_DEFAULT_EXCLUDES) | (excludes or set())
-    on_disk = {p.relative_to(root).as_posix(): _sha256(p)
-               for p in _iter_files(root, ex)}
+    on_disk = {
+        p.relative_to(root).as_posix(): _sha256(p) for p in _iter_files(root, ex)
+    }
     recorded = {f["path"]: f["sha256"] for f in manifest.get("files", [])}
 
     modified, missing = [], []
@@ -237,8 +256,12 @@ def verify_directory(root: Path, trusted_public_key_hex: Optional[str] = None,
             modified.append(path)
     added = sorted(set(on_disk) - set(recorded))
 
-    ok = (sig_valid and key_matches and not modified and not missing and not added)
+    ok = sig_valid and key_matches and not modified and not missing and not added
     return VerifyReport(
-        ok=ok, signature_valid=sig_valid, key_matches=key_matches,
-        modified=sorted(modified), missing=sorted(missing), added=added,
+        ok=ok,
+        signature_valid=sig_valid,
+        key_matches=key_matches,
+        modified=sorted(modified),
+        missing=sorted(missing),
+        added=added,
     )

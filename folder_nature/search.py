@@ -8,33 +8,34 @@ content roots, virtual environments, build artifacts).
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator, List, Optional
 
 import yaml
 
 from .core import NATURE_FILENAME, read_folder_nature
 from .schema import FolderNature, SchemaError
 
-
 # Directory names skipped during search/list — performance + sanity.
 # Hidden directories (starting with ``.``) are also skipped EXCEPT this list
 # (which lets the tool find folders that intentionally start with a dot).
-_SKIP_DIRS = frozenset({
-    "__pycache__",
-    "node_modules",
-    ".git",
-    ".venv",
-    "venv",
-    "env",
-    ".tox",
-    ".pytest_cache",
-    "build",
-    "dist",
-    ".eggs",
-    ".mypy_cache",
-    ".ruff_cache",
-})
+_SKIP_DIRS = frozenset(
+    {
+        "__pycache__",
+        "node_modules",
+        ".git",
+        ".venv",
+        "venv",
+        "env",
+        ".tox",
+        ".pytest_cache",
+        "build",
+        "dist",
+        ".eggs",
+        ".mypy_cache",
+        ".ruff_cache",
+    }
+)
 
 
 def _iter_nature_files(root: Path) -> Iterator[Path]:
@@ -48,7 +49,7 @@ def _iter_nature_files(root: Path) -> Iterator[Path]:
     if not root.exists() or not root.is_dir():
         return
 
-    stack: List[Path] = [root]
+    stack: list[Path] = [root]
     while stack:
         current = stack.pop()
         try:
@@ -74,13 +75,13 @@ def _iter_nature_files(root: Path) -> Iterator[Path]:
             stack.append(child)
 
 
-def list_all(root: Path) -> List[FolderNature]:
+def list_all(root: Path) -> list[FolderNature]:
     """Return every valid FolderNature found under ``root`` (depth-first).
 
     Invalid YAML or schema violations are silently skipped — use
     :func:`folder_nature.cli.validate_tree` to report errors explicitly.
     """
-    out: List[FolderNature] = []
+    out: list[FolderNature] = []
     for nf in _iter_nature_files(root):
         try:
             out.append(read_folder_nature(nf))
@@ -92,10 +93,10 @@ def list_all(root: Path) -> List[FolderNature]:
 def search(
     root: Path,
     *,
-    tag: Optional[str] = None,
-    being: Optional[str] = None,
-    name: Optional[str] = None,
-) -> List[FolderNature]:
+    tag: str | None = None,
+    being: str | None = None,
+    name: str | None = None,
+) -> list[FolderNature]:
     """Filter folder-natures under ``root`` by tag / being / name.
 
     All filters are AND-combined. ``None`` for a filter means "don't filter".
@@ -103,7 +104,7 @@ def search(
 
     Returns the matching natures in walk order (depth-first).
     """
-    out: List[FolderNature] = []
+    out: list[FolderNature] = []
     tag_lower = tag.lower() if tag else None
     name_lower = name.lower() if name else None
 
