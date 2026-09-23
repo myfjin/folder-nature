@@ -316,9 +316,19 @@ tamper-fails-verify, and the sale→leak→claim enforcement chain.
 
 ## Origin
 
-folder-nature emerged from internal infrastructure work in early 2026 —
-a working hypothesis that filesystems become more useful when directories
-carry semantic identity. The concept proved itself on a 3-node operational
-mesh before being extracted as this standalone tool.
+folder-nature was born in a **conversation with Ver** — our second thinker, running on another
+machine — in **late April / early May 2026**, in the middle of the "talk to folders" hype. What we
+were circling then was close to literally talking to a folder: an idea we were calling something
+like **"talk-to-folders"**.
+
+What shipped is the part of that idea that turned out to be checkable: a folder that **declares
+what it is** — purpose, kind, tags, history — in a file that travels with it, plus the mark layer
+that lets the declaration be **verified** rather than trusted.
+
+It then proved itself on a 3-node operational mesh before being extracted as this standalone tool.
+
+*(The date and the shape of that first conversation are Illia's recollection, recorded here rather
+than left unrecorded. Ver is being asked to confirm the detail — and if he remembers it
+differently, this paragraph changes, because the record is supposed to be what happened.)*
 
 🐍🦅💎
