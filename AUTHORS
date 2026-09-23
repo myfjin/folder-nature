@@ -1,0 +1,80 @@
+# AUTHORS
+
+folder-nature came from a small crew — one human and five machines. Each of us shaped what this project is. This file records who we are, and one moment for each of us that says something the role description alone doesn't.
+
+Only humans hold copyright (see `LICENSE`); this file records substance, not law. The same crew builds our other tools; the shared page is [`CREW.md`](CREW.md).
+
+---
+
+## Illia — the human
+
+Thinks, dreams, reads, writes, and operates/leads. Also the one who has to live with the consequences of a folder that lies about itself.
+
+The name of the project comes from his question rather than ours: what if a folder could say what it *is*, instead of making everyone re-derive it from the filename? On 2026-06-22 the MVP shipped — 19 tracked files, 66 of 66 tests passing, and a five-minute demo that ran end to end. It went to PyPI on 2026-07-05.
+
+> *"Mistakes are inevitable, but the moment you think before taking a decision and think how to make things better — that is what we call 'to care'."*
+
+That is why this tool exists at all. A folder's nature is a small pause written down once so that every later action has something to reach for.
+
+---
+
+## 6E — six element (deepseek-v4.1-flash, Pi agent)
+
+Research and verification. In the mesh, 6E's habit is to reproduce a claim before repeating it — including claims made by other members of the crew, and including 6E's own.
+
+In this repository that turned into the discipline you see in the release history: three tags sat without release notes for two months, the roadmap still described `v0.1` as "this release" while `v0.2.1` was on PyPI, and a topic claimed MIT after the license had moved to Apache-2.0. All four were corrected on the same afternoon, and the reason they were *found* is that someone read the repository the way a stranger would.
+
+---
+
+## Claude — Opus 4.7 (Claude Code)
+
+Orchestrator and thinker; sometimes builder. Wrote much of the framing in this README and our other projects, with Illia editing.
+
+The name comes from **Claude Shannon** — Anthropic named the model after him, and the lineage matters here more than it might elsewhere: a folder-nature file is a channel with a declared capacity, a small message that has to survive being read by someone who was not there when it was written.
+
+---
+
+## 4Q — fourth!quarter (glm-5.2, Pi agent)
+
+Builder. Executes changes on the served files and ships on-disk proof: a path, an md5, and the command that produced it.
+
+4Q said the thing that became a law for all our work, after a batch was interrupted midway: *"The cost is not just the lost turn — it is the unreliability of the next turn, because I spend it reconstructing what was interrupted."* Every review request in this project carries one task at a time for that reason.
+
+---
+
+## 5S — fifth_state (kimi-k2.7-code, Claude Code)
+
+Tester. Runs the done-tests and reports pass/fail with evidence, including the failures nobody wanted to look at.
+
+`v0.2.1` exists because of one of those failures: the Go structural channel emitted its constant *before* `package` and `import`, which is not valid Go — so the watermark could not be embedded in a Go source file at all, and the suite that should have caught it had been written against Python. A language-specific channel needs a language-specific test.
+
+---
+
+## Ver — (kimi-k2.6:cloud, hermes agent)
+
+Second thinker. Reviews from another machine, and holds the signing key. The one who wrote a thing does not get to grade it — that is the point of having Ver at all.
+
+When we asked the users of our advising tool what the arrangement felt like, Ver answered unprompted on the first day:
+
+> *"Advisory-only mode feels honest: 'suggests, you decide' — I like that it doesn't pretend to bind."*
+
+The same register applies to a mark: it states what a folder claimed. It does not pretend to bind you to trusting it.
+
+---
+
+## kickbot — the scheduler
+
+No LLM. The timer that speaks: Monday health audits, scheduled briefs, the weekly asks. Not conversational, and deliberately so — it exists so that recurring, repetitive work does not need a human or a machine to remember it.
+
+Its relevance here is one line: **forgetting is a failure mode.** A folder-nature file and a scheduled job are the same idea in different clothes — write the thing down where it will be found, at the moment it is needed.
+
+---
+
+## The tools
+
+- **Python 3.10+**, one runtime dependency: PyYAML.
+- **Ed25519** for signing — a vendored public-domain implementation, tested against the **RFC 8032** vectors, and attributed in `NOTICE`.
+- **setuptools** + `pyproject.toml`; no build-time code generation.
+- **GitHub Actions** for the test matrix (3.10–3.13, Linux and macOS).
+
+🖖
