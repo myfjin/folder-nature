@@ -18,14 +18,12 @@ from __future__ import annotations
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
 
 import yaml
 
 from .config import MarkConfig, allocate_copy_number
 from .payload import WatermarkPayload
 from .watermark import is_supported, stamp_file
-
 
 COPY_LEDGER_FILENAME = ".folder-mark-ledger.yaml"
 
@@ -36,10 +34,10 @@ class CopyLedger:
 
     trademark: str
     tier: str
-    issued: List[str]
+    issued: list[str]
 
     @classmethod
-    def load_or_new(cls, path: Path, config: MarkConfig) -> "CopyLedger":
+    def load_or_new(cls, path: Path, config: MarkConfig) -> CopyLedger:
         path = Path(path)
         if path.exists():
             data = yaml.safe_load(path.read_text(encoding="utf-8")) or {}
@@ -54,7 +52,9 @@ class CopyLedger:
         Path(path).write_text(
             yaml.safe_dump(
                 {"trademark": self.trademark, "tier": self.tier, "issued": self.issued},
-                sort_keys=False, allow_unicode=True),
+                sort_keys=False,
+                allow_unicode=True,
+            ),
             encoding="utf-8",
         )
 
@@ -67,9 +67,14 @@ class CopyResult:
     dst: Path
 
 
-def copy_tree(src: Path, dst: Path, config: MarkConfig,
-              *, number: Optional[str] = None,
-              ledger_path: Optional[Path] = None) -> CopyResult:
+def copy_tree(
+    src: Path,
+    dst: Path,
+    config: MarkConfig,
+    *,
+    number: str | None = None,
+    ledger_path: Path | None = None,
+) -> CopyResult:
     """Copy ``src`` -> ``dst`` and stamp every supported file with a copy number.
 
     ``number`` may be forced; otherwise the next number for the tier is
@@ -89,8 +94,13 @@ def copy_tree(src: Path, dst: Path, config: MarkConfig,
         number = allocate_copy_number(config.tier, ledger.issued)
     # else: honour a forced number (still recorded for cap accounting)
 
-    shutil.copytree(src, dst, ignore=shutil.ignore_patterns(
-        COPY_LEDGER_FILENAME, ".git", "__pycache__", ".venv", "*.pyc"))
+    shutil.copytree(
+        src,
+        dst,
+        ignore=shutil.ignore_patterns(
+            COPY_LEDGER_FILENAME, ".git", "__pycache__", ".venv", "*.pyc"
+        ),
+    )
 
     stamped = skipped = 0
     for p in sorted(dst.rglob("*")):
@@ -100,8 +110,10 @@ def copy_tree(src: Path, dst: Path, config: MarkConfig,
             skipped += 1
             continue
         payload = WatermarkPayload(
-            trademark=config.trademark, company=config.company or config.trademark,
-            number=number)
+            trademark=config.trademark,
+            company=config.company or config.trademark,
+            number=number,
+        )
         if stamp_file(p, payload):
             stamped += 1
         else:
@@ -109,5 +121,6 @@ def copy_tree(src: Path, dst: Path, config: MarkConfig,
 
     ledger.issued.append(number)
     ledger.save(ledger_file)
-    return CopyResult(number=number, files_stamped=stamped,
-                      files_skipped=skipped, dst=dst)
+    return CopyResult(
+        number=number, files_stamped=stamped, files_skipped=skipped, dst=dst
+    )

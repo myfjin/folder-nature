@@ -6,15 +6,12 @@ import pytest
 
 from folder_nature.schema import (
     BEING_TYPES,
-    FolderNature,
-    Identity,
-    Memory,
     SCHEMA_VERSION,
+    FolderNature,
     SchemaError,
     from_dict,
     validate,
 )
-
 
 # ── Minimal valid sample ─────────────────────────────────────────────────
 

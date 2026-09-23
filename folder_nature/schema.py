@@ -10,29 +10,30 @@ and validation. Use :mod:`folder_nature.core` for read/write.
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from datetime import date
-from typing import Any, Dict, List, Optional
-
+from typing import Any
 
 SCHEMA_VERSION = "1.0"
 
 # Controlled vocabulary for `identity.being`. Extensible — unknown values
 # log a warning during validation but don't reject the file.
-BEING_TYPES = frozenset({
-    "director",       # root/boss folder, children inherit
-    "collector",      # archive/historical storage
-    "workspace",      # active working space
-    "assets",         # non-code resources (images, fonts, media)
-    "configs",        # system/app configuration
-    "documentation",  # docs, references, guides
-    "ideas",          # unstructured exploration
-    "external",       # third-party content (vendored, downloaded)
-    "legal",          # contracts, agreements, compliance
-    "team-shared",    # multi-person collaboration
-    "private",        # sensitive/restricted
-    "system",         # system-managed (don't manually edit)
-})
+BEING_TYPES = frozenset(
+    {
+        "director",  # root/boss folder, children inherit
+        "collector",  # archive/historical storage
+        "workspace",  # active working space
+        "assets",  # non-code resources (images, fonts, media)
+        "configs",  # system/app configuration
+        "documentation",  # docs, references, guides
+        "ideas",  # unstructured exploration
+        "external",  # third-party content (vendored, downloaded)
+        "legal",  # contracts, agreements, compliance
+        "team-shared",  # multi-person collaboration
+        "private",  # sensitive/restricted
+        "system",  # system-managed (don't manually edit)
+    }
+)
 
 # Field-level constraints
 MAX_NAME_LEN = 100
@@ -50,6 +51,7 @@ class SchemaError(ValueError):
 @dataclass
 class Identity:
     """The mandatory identity block of a folder-nature."""
+
     name: str
     being: str
     purpose: str
@@ -58,9 +60,10 @@ class Identity:
 @dataclass
 class Memory:
     """Optional historical context. All fields optional within the block."""
-    created: Optional[str] = None                      # ISO date YYYY-MM-DD
-    last_significant_change: Optional[str] = None       # ISO date
-    notable_events: List[str] = field(default_factory=list)
+
+    created: str | None = None  # ISO date YYYY-MM-DD
+    last_significant_change: str | None = None  # ISO date
+    notable_events: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -70,16 +73,17 @@ class FolderNature:
     Construct via :func:`folder_nature.schema.from_dict` (does validation) or
     by manual instantiation + explicit :meth:`validate` call.
     """
-    schema_version: str = SCHEMA_VERSION
-    identity: Optional[Identity] = None
-    director: bool = False
-    tags: List[str] = field(default_factory=list)
-    rules: List[str] = field(default_factory=list)
-    memory: Optional[Memory] = None
 
-    def to_dict(self) -> Dict[str, Any]:
+    schema_version: str = SCHEMA_VERSION
+    identity: Identity | None = None
+    director: bool = False
+    tags: list[str] = field(default_factory=list)
+    rules: list[str] = field(default_factory=list)
+    memory: Memory | None = None
+
+    def to_dict(self) -> dict[str, Any]:
         """Convert to a YAML-friendly dict. Drops None values for cleanliness."""
-        out: Dict[str, Any] = {"schema_version": self.schema_version}
+        out: dict[str, Any] = {"schema_version": self.schema_version}
         if self.identity is not None:
             out["identity"] = {
                 "name": self.identity.name,
@@ -92,7 +96,7 @@ class FolderNature:
         if self.rules:
             out["rules"] = list(self.rules)
         if self.memory is not None:
-            mem: Dict[str, Any] = {}
+            mem: dict[str, Any] = {}
             if self.memory.created:
                 mem["created"] = self.memory.created
             if self.memory.last_significant_change:
@@ -108,7 +112,7 @@ class FolderNature:
         validate(self.to_dict())
 
 
-def from_dict(data: Dict[str, Any]) -> FolderNature:
+def from_dict(data: dict[str, Any]) -> FolderNature:
     """Construct + validate a FolderNature from a parsed YAML dict.
 
     Raises :class:`SchemaError` if the dict doesn't conform.
@@ -122,7 +126,7 @@ def from_dict(data: Dict[str, Any]) -> FolderNature:
         purpose=identity_raw["purpose"],
     )
 
-    memory: Optional[Memory] = None
+    memory: Memory | None = None
     if "memory" in data:
         mem_raw = data["memory"]
         memory = Memory(
@@ -141,7 +145,7 @@ def from_dict(data: Dict[str, Any]) -> FolderNature:
     )
 
 
-def validate(data: Dict[str, Any]) -> None:
+def validate(data: dict[str, Any]) -> None:
     """Validate a parsed YAML dict against schema v1.0.
 
     Raises :class:`SchemaError` with a descriptive message on first violation.
@@ -155,7 +159,9 @@ def validate(data: Dict[str, Any]) -> None:
     if version is None:
         raise SchemaError("schema_version is required")
     if not isinstance(version, str):
-        raise SchemaError(f"schema_version must be a string, got {type(version).__name__}")
+        raise SchemaError(
+            f"schema_version must be a string, got {type(version).__name__}"
+        )
     if version != SCHEMA_VERSION:
         raise SchemaError(
             f"unsupported schema_version {version!r}; "
@@ -230,14 +236,18 @@ def validate(data: Dict[str, Any]) -> None:
         for date_field in ("created", "last_significant_change"):
             if date_field in mem and mem[date_field] is not None:
                 if not isinstance(mem[date_field], str):
-                    raise SchemaError(f"memory.{date_field} must be a string (ISO date)")
+                    raise SchemaError(
+                        f"memory.{date_field} must be a string (ISO date)"
+                    )
                 # Light date format check — YYYY-MM-DD
                 val = mem[date_field]
                 if len(val) >= 10 and val[4] == "-" and val[7] == "-":
                     try:
                         date.fromisoformat(val[:10])
                     except ValueError as e:
-                        raise SchemaError(f"memory.{date_field} not a valid ISO date: {e}")
+                        raise SchemaError(
+                            f"memory.{date_field} not a valid ISO date: {e}"
+                        )
         if "notable_events" in mem:
             events = mem["notable_events"]
             if not isinstance(events, list):

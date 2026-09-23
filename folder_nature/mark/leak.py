@@ -21,7 +21,6 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import List, Optional
 
 from .sale import SaleRegistry
 from .watermark import MarkReport, verify_file, verify_text
@@ -29,11 +28,11 @@ from .watermark import MarkReport, verify_file, verify_text
 
 @dataclass
 class LeakHit:
-    source: str                  # path or "<text>"
+    source: str  # path or "<text>"
     number: str
     trademark: str
     report: MarkReport
-    buyer: Optional[dict] = None   # sale record dict, if traced
+    buyer: dict | None = None  # sale record dict, if traced
 
     @property
     def is_master(self) -> bool:
@@ -44,27 +43,39 @@ class LeakHit:
         return self.buyer is not None
 
 
-def _hit_from_report(source: str, rep: MarkReport, registry: Optional[SaleRegistry]) -> Optional[LeakHit]:
+def _hit_from_report(
+    source: str, rep: MarkReport, registry: SaleRegistry | None
+) -> LeakHit | None:
     if not rep.is_marked or rep.payload is None:
         return None
     buyer = None
     if registry is not None and str(rep.payload.number) != "0":
         buyer = registry.lookup(rep.payload.number)
-    return LeakHit(source=source, number=str(rep.payload.number),
-                   trademark=rep.payload.trademark, report=rep, buyer=buyer)
+    return LeakHit(
+        source=source,
+        number=str(rep.payload.number),
+        trademark=rep.payload.trademark,
+        report=rep,
+        buyer=buyer,
+    )
 
 
-def scan_text(text: str, registry: Optional[SaleRegistry] = None,
-              source: str = "<text>") -> Optional[LeakHit]:
+def scan_text(
+    text: str, registry: SaleRegistry | None = None, source: str = "<text>"
+) -> LeakHit | None:
     """Scan a blob of text for a watermark; trace if a registry is given."""
     return _hit_from_report(source, verify_text(text), registry)
 
 
-def scan_path(path: Path, registry: Optional[SaleRegistry] = None) -> List[LeakHit]:
+def scan_path(path: Path, registry: SaleRegistry | None = None) -> list[LeakHit]:
     """Scan a file or a directory tree; return every watermark hit found."""
     path = Path(path)
-    hits: List[LeakHit] = []
-    files = [path] if path.is_file() else [p for p in sorted(path.rglob("*")) if p.is_file()]
+    hits: list[LeakHit] = []
+    files = (
+        [path]
+        if path.is_file()
+        else [p for p in sorted(path.rglob("*")) if p.is_file()]
+    )
     for f in files:
         hit = _hit_from_report(str(f), verify_file(f), registry)
         if hit is not None:
@@ -82,16 +93,22 @@ def generate_claim(hit: LeakHit) -> str:
     if hit.is_master:
         return (
             f"NO CLAIM: watermark number 0 is the MASTER original of "
-            f"'{hit.trademark}'. This is our own file, not a customer leak.")
+            f"'{hit.trademark}'. This is our own file, not a customer leak."
+        )
     if not hit.traced:
         return (
             f"NO CLAIM (untraceable): found a copy of '{hit.trademark}' marked "
             f"number {hit.number}, but that number is not in the sale registry. "
-            "Without a recorded, license-accepted sale there is nothing to cite.")
+            "Without a recorded, license-accepted sale there is nothing to cite."
+        )
 
     buyer = hit.buyer or {}
     lic = buyer.get("license", {})
-    pending = " (placeholder — bind real license text before enforcing)" if lic.get("is_placeholder") else ""
+    pending = (
+        " (placeholder — bind real license text before enforcing)"
+        if lic.get("is_placeholder")
+        else ""
+    )
     return (
         "COPYRIGHT DEPARTURE CLAIM\n"
         f"  work:            {hit.trademark}\n"

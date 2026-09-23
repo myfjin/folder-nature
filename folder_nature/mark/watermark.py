@@ -34,16 +34,14 @@ import ast
 import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional
 
 from .payload import PYRAMID, PayloadError, WatermarkPayload
 
-
 # ── zero-width alphabet (channel A) ──────────────────────────────────────────
 
-_ZW0 = "​"   # ZERO WIDTH SPACE           -> bit 0
-_ZW1 = "‌"   # ZERO WIDTH NON-JOINER      -> bit 1
-_ZWS = "⁣"   # INVISIBLE SEPARATOR        -> frame sentinel
+_ZW0 = "\u200b"  # ZERO WIDTH SPACE           -> bit 0
+_ZW1 = "‌"  # ZERO WIDTH NON-JOINER      -> bit 1
+_ZWS = "⁣"  # INVISIBLE SEPARATOR        -> frame sentinel
 _ZW_CHARS = _ZW0 + _ZW1 + _ZWS
 
 
@@ -55,7 +53,7 @@ def _zw_encode(token: str) -> str:
     return _ZWS + "".join(bits) + _ZWS
 
 
-def _zw_decode(text: str) -> Optional[str]:
+def _zw_decode(text: str) -> str | None:
     # find the first sentinel-framed run of zero-width bits
     frames = re.findall(f"{_ZWS}([{_ZW0}{_ZW1}]*){_ZWS}", text)
     for body in frames:
@@ -64,7 +62,7 @@ def _zw_decode(text: str) -> Optional[str]:
         out = bytearray()
         for i in range(0, len(body), 8):
             byte = 0
-            for ch in body[i:i + 8]:
+            for ch in body[i : i + 8]:
                 byte = (byte << 1) | (1 if ch == _ZW1 else 0)
             out.append(byte)
         try:
@@ -76,7 +74,7 @@ def _zw_decode(text: str) -> Optional[str]:
 
 # ── language profiles ────────────────────────────────────────────────────────
 
-_STRUCT_PREFIX = "AE1."   # marks the token inside the structural literal
+_STRUCT_PREFIX = "AE1."  # marks the token inside the structural literal
 
 
 @dataclass(frozen=True)
@@ -84,7 +82,7 @@ class _Lang:
     line_comment: str
     # a format string with one {s} slot for a double-quoted string literal;
     # None => this language gets comment channels only (no structural const).
-    const_tmpl: Optional[str]
+    const_tmpl: str | None
     # rust needs inner attributes (#![..]) and //! doc-comments kept on top.
     rust_like: bool = False
     python_like: bool = False
@@ -93,22 +91,22 @@ class _Lang:
     go_like: bool = False
 
 
-_LANGS: Dict[str, _Lang] = {
-    ".py":  _Lang("#", "_AURA_MARK = {s}", python_like=True),
+_LANGS: dict[str, _Lang] = {
+    ".py": _Lang("#", "_AURA_MARK = {s}", python_like=True),
     ".pyw": _Lang("#", "_AURA_MARK = {s}", python_like=True),
-    ".r":   _Lang("#", ".aura_mark <- {s}"),
-    ".R":   _Lang("#", ".aura_mark <- {s}"),
-    ".rs":  _Lang("//", "const _AURA_MARK: &str = {s};", rust_like=True),
-    ".go":  _Lang("//", "var _auraMark = {s}", go_like=True),
-    ".js":  _Lang("//", "const _AURA_MARK = {s};"),
+    ".r": _Lang("#", ".aura_mark <- {s}"),
+    ".R": _Lang("#", ".aura_mark <- {s}"),
+    ".rs": _Lang("//", "const _AURA_MARK: &str = {s};", rust_like=True),
+    ".go": _Lang("//", "var _auraMark = {s}", go_like=True),
+    ".js": _Lang("//", "const _AURA_MARK = {s};"),
     ".mjs": _Lang("//", "const _AURA_MARK = {s};"),
-    ".ts":  _Lang("//", "const _AURA_MARK = {s};"),
-    ".c":   _Lang("//", "static const char *_aura_mark = {s};"),
-    ".h":   _Lang("//", "static const char *_aura_mark = {s};"),
-    ".cc":  _Lang("//", "static const char *_aura_mark = {s};"),
+    ".ts": _Lang("//", "const _AURA_MARK = {s};"),
+    ".c": _Lang("//", "static const char *_aura_mark = {s};"),
+    ".h": _Lang("//", "static const char *_aura_mark = {s};"),
+    ".cc": _Lang("//", "static const char *_aura_mark = {s};"),
     ".cpp": _Lang("//", "static const char *_aura_mark = {s};"),
     ".hpp": _Lang("//", "static const char *_aura_mark = {s};"),
-    ".java": _Lang("//", None),   # class-scoped consts are awkward; comments only
+    ".java": _Lang("//", None),  # class-scoped consts are awkward; comments only
 }
 
 # languages we can round-trip; anything else -> comment-only generic profile
@@ -153,13 +151,19 @@ def _python_insert_line(src: str) -> int:
         tree = ast.parse(src)
         body = tree.body
         idx = 0
-        if (body and isinstance(body[0], ast.Expr)
-                and isinstance(body[0].value, ast.Constant)
-                and isinstance(body[0].value.value, str)):
+        if (
+            body
+            and isinstance(body[0], ast.Expr)
+            and isinstance(body[0].value, ast.Constant)
+            and isinstance(body[0].value.value, str)
+        ):
             after = max(after, body[0].value.end_lineno or after)
             idx = 1
-        while (idx < len(body) and isinstance(body[idx], ast.ImportFrom)
-               and body[idx].module == "__future__"):
+        while (
+            idx < len(body)
+            and isinstance(body[idx], ast.ImportFrom)
+            and body[idx].module == "__future__"
+        ):
             after = max(after, body[idx].end_lineno or after)
             idx += 1
     except SyntaxError:
@@ -201,39 +205,42 @@ def _go_insert_line(src: str) -> int:
     i = 0
     while i < n and not lines[i].lstrip().startswith("package "):
         i += 1
-    if i >= n:                                    # no package clause -> fallback
+    if i >= n:  # no package clause -> fallback
         return _generic_insert_line(src, _LANGS[".go"])
-    i += 1                                         # move past 'package X'
+    i += 1  # move past 'package X'
     while i < n:
         s = lines[i].strip()
         if s == "" or s.startswith("//") or s.startswith("/*"):
             i += 1
             continue
-        if s.startswith("import ("):               # grouped block -> skip to ')'
+        if s.startswith("import ("):  # grouped block -> skip to ')'
             i += 1
             while i < n and lines[i].strip() != ")":
                 i += 1
             i += 1
             continue
-        if s.startswith("import "):                # single-line import
+        if s.startswith("import "):  # single-line import
             i += 1
             continue
         break
     return i
 
 
-def _channel_lines(token: str, lang: _Lang,
-                   payload: "WatermarkPayload") -> List[str]:
+def _channel_lines(token: str, lang: _Lang, payload: WatermarkPayload) -> list[str]:
     c = lang.line_comment
     # Channel B is the VISIBLE attribution the honest majority reads without any
     # tooling: the human-facing name + owner, then the opaque tracing token.
-    owner = f" — © {payload.company}" if payload.company and payload.company != payload.trademark else ""
+    owner = (
+        f" — © {payload.company}"
+        if payload.company and payload.company != payload.trademark
+        else ""
+    )
     label = f"{payload.trademark}{owner}"
     lines = [
-        f"{c} {PYRAMID} {label} ⟦{_STRUCT_PREFIX}{token}⟧",                      # B
-        f"{c} {_zw_encode(token)}",                                              # A
+        f"{c} {PYRAMID} {label} ⟦{_STRUCT_PREFIX}{token}⟧",  # B
+        f"{c} {_zw_encode(token)}",  # A
     ]
-    if lang.const_tmpl:                                                          # C
+    if lang.const_tmpl:  # C
         literal = f'"{_STRUCT_PREFIX}{token}"'
         lines.append(lang.const_tmpl.format(s=literal))
     return lines
@@ -244,13 +251,18 @@ def strip_marks(src: str, lang: _Lang) -> str:
     out = []
     for ln in src.splitlines(keepends=False):
         stripped = ln.strip()
-        if _COMMENT_TAG_RE.search(ln):                   # channel B (⟦AE1.…⟧)
+        if _COMMENT_TAG_RE.search(ln):  # channel B (⟦AE1.…⟧)
             continue
-        if _ZWS in ln and set(ln) <= set(_ZW_CHARS + lang.line_comment + " "):  # channel A line
+        if _ZWS in ln and set(ln) <= set(
+            _ZW_CHARS + lang.line_comment + " "
+        ):  # channel A line
             continue
         if _STRUCT_RE.search(ln) and (
-            "_AURA_MARK" in ln or ".aura_mark" in ln or "_auraMark" in ln
-            or "_aura_mark" in ln):                            # channel C
+            "_AURA_MARK" in ln
+            or ".aura_mark" in ln
+            or "_auraMark" in ln
+            or "_aura_mark" in ln
+        ):  # channel C
             continue
         out.append(ln)
     result = "\n".join(out)
@@ -263,8 +275,9 @@ class StampError(RuntimeError):
     """Raised when stamping would produce a file that no longer parses/runs."""
 
 
-def stamp_text(src: str, payload: WatermarkPayload, lang: _Lang,
-               filename: str = "<stamped>") -> str:
+def stamp_text(
+    src: str, payload: WatermarkPayload, lang: _Lang, filename: str = "<stamped>"
+) -> str:
     """Return ``src`` with the payload embedded across all channels.
 
     Idempotent: an existing mark is replaced. For Python, the result is
@@ -303,10 +316,11 @@ def stamp_text(src: str, payload: WatermarkPayload, lang: _Lang,
 def _assert_go_builds(result: str, filename: str) -> None:
     """Best-effort gate-check for Go: if the ``go`` toolchain is present, ensure
     the stamped source still builds. No toolchain -> skip (can't verify)."""
+    import os as _os
     import shutil as _sh
     import subprocess as _sp
     import tempfile as _tf
-    import os as _os
+
     if not _sh.which("go"):
         return
     tmp = _tf.mkdtemp()
@@ -315,8 +329,12 @@ def _assert_go_builds(result: str, filename: str) -> None:
         with open(gofile, "w", encoding="utf-8") as fh:
             fh.write(result)
         # vet the syntax/build cheaply; only care about a hard build failure.
-        r = _sp.run(["go", "build", "-o", _os.path.join(tmp, "out"), gofile],
-                    capture_output=True, text=True, timeout=120)
+        r = _sp.run(
+            ["go", "build", "-o", _os.path.join(tmp, "out"), gofile],
+            capture_output=True,
+            text=True,
+            timeout=120,
+        )
         if r.returncode != 0:
             raise StampError(
                 f"stamping {filename} would break Go build: "
@@ -350,10 +368,10 @@ def stamp_file(path: Path, payload: WatermarkPayload) -> bool:
 class MarkReport:
     """Result of inspecting a file (or text) for a watermark."""
 
-    status: str                          # 'authentic' | 'tampered' | 'unmarked'
-    payload: Optional[WatermarkPayload] = None
-    channels_present: List[str] = field(default_factory=list)
-    channels_valid: List[str] = field(default_factory=list)
+    status: str  # 'authentic' | 'tampered' | 'unmarked'
+    payload: WatermarkPayload | None = None
+    channels_present: list[str] = field(default_factory=list)
+    channels_valid: list[str] = field(default_factory=list)
     detail: str = ""
 
     @property
@@ -361,18 +379,18 @@ class MarkReport:
         return self.status != "unmarked"
 
 
-def _extract_tokens(text: str) -> Dict[str, str]:
+def _extract_tokens(text: str) -> dict[str, str]:
     """Return {channel: raw_token} for every channel that yields a token."""
-    tokens: Dict[str, str] = {}
+    tokens: dict[str, str] = {}
     mb = _COMMENT_TAG_RE.search(text)
     if mb:
-        tokens["B"] = mb.group(1)[len(_STRUCT_PREFIX):]
+        tokens["B"] = mb.group(1)[len(_STRUCT_PREFIX) :]
     mc = _STRUCT_RE.search(text)
     if mc:
         tokens["C"] = mc.group(1)
     za = _zw_decode(text)
     if za and za.startswith(_STRUCT_PREFIX):
-        tokens["A"] = za[len(_STRUCT_PREFIX):]
+        tokens["A"] = za[len(_STRUCT_PREFIX) :]
     elif za:
         tokens["A"] = za
     return tokens
@@ -385,7 +403,7 @@ def verify_text(text: str) -> MarkReport:
         return MarkReport("unmarked", detail="no watermark channel found")
 
     present = sorted(tokens)
-    valid: Dict[str, WatermarkPayload] = {}
+    valid: dict[str, WatermarkPayload] = {}
     for ch, tok in tokens.items():
         try:
             valid[ch] = WatermarkPayload.decode(tok)
@@ -394,7 +412,8 @@ def verify_text(text: str) -> MarkReport:
 
     if not valid:
         return MarkReport(
-            "tampered", channels_present=present,
+            "tampered",
+            channels_present=present,
             detail="channel(s) present but no CRC-valid payload (tampered/truncated)",
         )
 
@@ -403,7 +422,9 @@ def verify_text(text: str) -> MarkReport:
     payload = next(iter(valid.values()))
     if len(keys) > 1:
         return MarkReport(
-            "tampered", payload=payload, channels_present=present,
+            "tampered",
+            payload=payload,
+            channels_present=present,
             channels_valid=sorted(valid),
             detail=f"channels disagree: {keys}",
         )
@@ -413,11 +434,16 @@ def verify_text(text: str) -> MarkReport:
     # a channel present but invalid while others are valid = partial tamper
     if len(valid) < len(present):
         status = "tampered"
-        detail = ("some channels valid, some corrupted — "
-                  "partial tamper; attribution still recoverable")
+        detail = (
+            "some channels valid, some corrupted — "
+            "partial tamper; attribution still recoverable"
+        )
     return MarkReport(
-        status, payload=payload, channels_present=present,
-        channels_valid=sorted(valid), detail=detail,
+        status,
+        payload=payload,
+        channels_present=present,
+        channels_valid=sorted(valid),
+        detail=detail,
     )
 
 

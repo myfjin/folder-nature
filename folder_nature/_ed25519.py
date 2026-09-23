@@ -26,11 +26,11 @@ from __future__ import annotations
 import hashlib
 import os
 
-__all__ = ["generate_seed", "publickey", "sign", "verify", "BadSignatureError"]
+__all__ = ["BadSignatureError", "generate_seed", "publickey", "sign", "verify"]
 
 _b = 256
-_q = 2 ** 255 - 19
-_l = 2 ** 252 + 27742317777372353535851937790883648493
+_q = 2**255 - 19
+_l = 2**252 + 27742317777372353535851937790883648493
 
 
 class BadSignatureError(Exception):
@@ -99,12 +99,12 @@ def _bit(h: bytes, i: int) -> int:
 
 def _secret_scalar(seed: bytes) -> int:
     h = _H(seed)
-    return 2 ** (_b - 2) + sum(2 ** i * _bit(h, i) for i in range(3, _b - 2))
+    return 2 ** (_b - 2) + sum(2**i * _bit(h, i) for i in range(3, _b - 2))
 
 
 def _Hint(m: bytes) -> int:
     h = _H(m)
-    return sum(2 ** i * _bit(h, i) for i in range(2 * _b))
+    return sum(2**i * _bit(h, i) for i in range(2 * _b))
 
 
 def _isoncurve(P) -> bool:
@@ -113,11 +113,11 @@ def _isoncurve(P) -> bool:
 
 
 def _decodeint(s: bytes) -> int:
-    return sum(2 ** i * _bit(s, i) for i in range(0, _b))
+    return sum(2**i * _bit(s, i) for i in range(_b))
 
 
 def _decodepoint(s: bytes):
-    y = sum(2 ** i * _bit(s, i) for i in range(0, _b - 1))
+    y = sum(2**i * _bit(s, i) for i in range(_b - 1))
     x = _xrecover(y)
     if x & 1 != _bit(s, _b - 1):
         x = _q - x
@@ -151,7 +151,7 @@ def sign(message: bytes, seed: bytes) -> bytes:
     h = _H(seed)
     a = _secret_scalar(seed)
     pk = _encodepoint(_scalarmult(_B, a))
-    r = _Hint(h[_b // 8:_b // 4] + message)
+    r = _Hint(h[_b // 8 : _b // 4] + message)
     R = _scalarmult(_B, r)
     S = (r + _Hint(_encodepoint(R) + pk + message) * a) % _l
     return _encodepoint(R) + _encodeint(S)

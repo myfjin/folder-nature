@@ -2,16 +2,11 @@
 
 from __future__ import annotations
 
-import sys
 from pathlib import Path
-
-import pytest
-import yaml
 
 from folder_nature.cli import main as cli_main
 from folder_nature.core import NATURE_FILENAME, read_folder_nature
 from folder_nature.schema import SCHEMA_VERSION
-
 
 # Each cli call goes via cli_main(argv) — argv is the args list AFTER the
 # program name (i.e. matches what argparse would see in sys.argv[1:]).
@@ -41,12 +36,18 @@ def test_init_without_template_requires_fields(tmp_path: Path, capsys):
 
 
 def test_init_minimal_manual(tmp_path: Path):
-    rc = cli_main([
-        "init", str(tmp_path),
-        "--name", "myproj",
-        "--being", "workspace",
-        "--purpose", "my project",
-    ])
+    rc = cli_main(
+        [
+            "init",
+            str(tmp_path),
+            "--name",
+            "myproj",
+            "--being",
+            "workspace",
+            "--purpose",
+            "my project",
+        ]
+    )
     assert rc == 0
     nature = read_folder_nature(tmp_path / NATURE_FILENAME)
     assert nature.identity.name == "myproj"
@@ -54,7 +55,9 @@ def test_init_minimal_manual(tmp_path: Path):
 
 def test_init_refuses_overwrite_without_force(tmp_path: Path, capsys):
     cli_main(["init", str(tmp_path), "--template", "workspace", "--name", "first"])
-    rc = cli_main(["init", str(tmp_path), "--template", "workspace", "--name", "second"])
+    rc = cli_main(
+        ["init", str(tmp_path), "--template", "workspace", "--name", "second"]
+    )
     assert rc == 1
     err = capsys.readouterr().err
     assert "already exists" in err
@@ -62,18 +65,33 @@ def test_init_refuses_overwrite_without_force(tmp_path: Path, capsys):
 
 def test_init_force_overwrites(tmp_path: Path):
     cli_main(["init", str(tmp_path), "--template", "workspace", "--name", "first"])
-    rc = cli_main([
-        "init", str(tmp_path), "--template", "workspace", "--name", "second",
-        "--force",
-    ])
+    rc = cli_main(
+        [
+            "init",
+            str(tmp_path),
+            "--template",
+            "workspace",
+            "--name",
+            "second",
+            "--force",
+        ]
+    )
     assert rc == 0
     nature = read_folder_nature(tmp_path / NATURE_FILENAME)
     assert nature.identity.name == "second"
 
 
 def test_init_nonexistent_dir(tmp_path: Path, capsys):
-    rc = cli_main(["init", str(tmp_path / "no-such-dir"),
-                   "--template", "workspace", "--name", "x"])
+    rc = cli_main(
+        [
+            "init",
+            str(tmp_path / "no-such-dir"),
+            "--template",
+            "workspace",
+            "--name",
+            "x",
+        ]
+    )
     assert rc == 2
     err = capsys.readouterr().err
     assert "does not exist" in err
@@ -100,11 +118,19 @@ def test_show_missing(tmp_path: Path, capsys):
 
 
 def test_query_finds_director(tmp_path: Path, capsys):
-    cli_main([
-        "init", str(tmp_path),
-        "--name", "boss", "--being", "director", "--purpose", "root",
-        "--director",
-    ])
+    cli_main(
+        [
+            "init",
+            str(tmp_path),
+            "--name",
+            "boss",
+            "--being",
+            "director",
+            "--purpose",
+            "root",
+            "--director",
+        ]
+    )
     deep = tmp_path / "a" / "b"
     deep.mkdir(parents=True)
 
@@ -150,7 +176,9 @@ def test_validate_clean_tree(tmp_path: Path, capsys):
 def test_validate_catches_bad_file(tmp_path: Path, capsys):
     cli_main(["init", str(tmp_path), "--template", "workspace", "--name", "demo"])
     # Corrupt the file
-    (tmp_path / NATURE_FILENAME).write_text("schema_version: '99.9'\nidentity:\n  name: x\n  being: workspace\n  purpose: y\n")
+    (tmp_path / NATURE_FILENAME).write_text(
+        "schema_version: '99.9'\nidentity:\n  name: x\n  being: workspace\n  purpose: y\n"
+    )
     rc = cli_main(["validate", str(tmp_path)])
     assert rc == 1
     out = capsys.readouterr().out
