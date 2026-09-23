@@ -246,16 +246,35 @@ def _channel_lines(token: str, lang: _Lang, payload: WatermarkPayload) -> list[s
     return lines
 
 
+_ZW_FRAME_RE = re.compile(f"{_ZWS}[{_ZW0}{_ZW1}]*{_ZWS}")
+
+
+def _is_channel_a_line(ln: str, lang: _Lang) -> bool:
+    """True when the line is a channel-A mark: an optional comment prefix, one
+    sentinel-delimited zero-width frame, and nothing else.
+
+    Deliberately structural. The previous test asked a *character-set* question —
+    "does this line consist only of comment characters, spaces and zero-width
+    characters?" — which is a proxy for the real question, and it answers wrong as
+    soon as the line carries any other character. gofmt indents with tabs, so an
+    indented mark went unrecognised, survived re-stamping, and the file ended up
+    holding two frames — the old payload still extractable — while still verifying
+    as authentic.
+    """
+    s = ln.strip()
+    m = _ZW_FRAME_RE.search(s)
+    if not m or s[m.end() :]:
+        return False
+    return s[: m.start()].strip() in ("", lang.line_comment)
+
+
 def strip_marks(src: str, lang: _Lang) -> str:
     """Remove any existing folder-nature mark lines (idempotent re-stamping)."""
     out = []
     for ln in src.splitlines(keepends=False):
-        stripped = ln.strip()
         if _COMMENT_TAG_RE.search(ln):  # channel B (⟦AE1.…⟧)
             continue
-        if _ZWS in ln and set(ln) <= set(
-            _ZW_CHARS + lang.line_comment + " "
-        ):  # channel A line
+        if _is_channel_a_line(ln, lang):  # channel A line
             continue
         if _STRUCT_RE.search(ln) and (
             "_AURA_MARK" in ln
