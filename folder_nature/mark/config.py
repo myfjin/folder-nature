@@ -23,10 +23,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 import yaml
-
 
 MARK_CONFIG_FILENAME = ".folder-mark.yaml"
 
@@ -43,8 +41,8 @@ class MarkConfigError(ValueError):
 # tier -> (allowed copy numbers as an ordered list of string tokens).
 # Master (0) is excluded from the *copy* allocation of personal (personal
 # copies start at 1); team includes 0..9; enterprise allocates base36 from 10 up.
-_PERSONAL_COPY_NUMBERS = [str(n) for n in range(1, 4)]        # 1,2,3
-_TEAM_COPY_NUMBERS = [str(n) for n in range(0, 10)]           # 0..9
+_PERSONAL_COPY_NUMBERS = [str(n) for n in range(1, 4)]  # 1,2,3
+_TEAM_COPY_NUMBERS = [str(n) for n in range(10)]  # 0..9
 
 TIERS = ("personal", "team", "enterprise")
 
@@ -64,15 +62,15 @@ def base36(n: int) -> str:
     return "".join(reversed(out))
 
 
-def copy_capacity(tier: str) -> Optional[int]:
+def copy_capacity(tier: str) -> int | None:
     """Max number of *copies* a tier may allocate (excluding the master).
 
     Returns ``None`` for enterprise (effectively unbounded / per-seat).
     """
     if tier == "personal":
-        return len(_PERSONAL_COPY_NUMBERS)      # 3
+        return len(_PERSONAL_COPY_NUMBERS)  # 3
     if tier == "team":
-        return len(_TEAM_COPY_NUMBERS)          # 10 (0..9, incl. master slot)
+        return len(_TEAM_COPY_NUMBERS)  # 10 (0..9, incl. master slot)
     if tier == "enterprise":
         return None
     raise MarkConfigError(f"unknown tier {tier!r}; expected one of {TIERS}")
@@ -121,9 +119,9 @@ class MarkConfig:
     """
 
     trademark: str
-    company: Optional[str] = None
+    company: str | None = None
     tier: str = "team"
-    license_tier: Optional[str] = None
+    license_tier: str | None = None
 
     def __post_init__(self) -> None:
         if not self.trademark or not str(self.trademark).strip():
@@ -145,7 +143,7 @@ class MarkConfig:
         return out
 
 
-def load_config(directory: Path) -> Optional[MarkConfig]:
+def load_config(directory: Path) -> MarkConfig | None:
     """Load ``.folder-mark.yaml`` from ``directory`` if present, else None."""
     path = Path(directory) / MARK_CONFIG_FILENAME
     if not path.exists():

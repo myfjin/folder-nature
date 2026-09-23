@@ -3,8 +3,13 @@
 import pytest
 
 from folder_nature.mark import copy_limiter
-from folder_nature.mark.config import (MarkConfig, MarkConfigError, allocate_copy_number,
-                                       base36, copy_capacity)
+from folder_nature.mark.config import (
+    MarkConfig,
+    MarkConfigError,
+    allocate_copy_number,
+    base36,
+    copy_capacity,
+)
 
 
 def test_tier_capacities():
@@ -33,13 +38,14 @@ def test_team_allocates_0_to_9():
 
 
 def test_enterprise_is_base36_from_10_unbounded():
-    assert allocate_copy_number("enterprise", []) == "a"          # 10
-    assert allocate_copy_number("enterprise", ["a"]) == "b"       # 11
+    assert allocate_copy_number("enterprise", []) == "a"  # 10
+    assert allocate_copy_number("enterprise", ["a"]) == "b"  # 11
     assert base36(10) == "a" and base36(35) == "z" and base36(36) == "10"
 
 
 def test_copy_tree_auto_numbers_and_stamps(tmp_path):
-    src = tmp_path / "src"; src.mkdir()
+    src = tmp_path / "src"
+    src.mkdir()
     (src / "m.py").write_text("print(1)\n", encoding="utf-8")
     cfg = MarkConfig(trademark="Aura Elements", tier="personal")
 
@@ -50,12 +56,14 @@ def test_copy_tree_auto_numbers_and_stamps(tmp_path):
 
     # the copies carry the number in their watermark
     from folder_nature.mark.watermark import verify_file
+
     assert verify_file(tmp_path / "c1" / "m.py").payload.number == "1"
     assert verify_file(tmp_path / "c2" / "m.py").payload.number == "2"
 
 
 def test_copy_tree_honours_cooperative_cap(tmp_path):
-    src = tmp_path / "src"; src.mkdir()
+    src = tmp_path / "src"
+    src.mkdir()
     (src / "m.py").write_text("print(1)\n", encoding="utf-8")
     cfg = MarkConfig(trademark="Aura Elements", tier="personal")
     for i in range(3):

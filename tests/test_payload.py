@@ -6,8 +6,12 @@ from folder_nature.mark.payload import PayloadError, WatermarkPayload
 
 
 def test_roundtrip_preserves_fields():
-    p = WatermarkPayload(trademark="Aura Elements", company="Aura Elements",
-                         number="7", pattern_id="ds.kalman")
+    p = WatermarkPayload(
+        trademark="Aura Elements",
+        company="Aura Elements",
+        number="7",
+        pattern_id="ds.kalman",
+    )
     back = WatermarkPayload.decode(p.encode())
     assert back.trademark == "Aura Elements"
     assert back.company == "Aura Elements"
@@ -24,7 +28,7 @@ def test_crc_catches_single_char_corruption():
     token = WatermarkPayload("X", "X", "1").encode()
     # flip a character in the middle of the base32 token
     i = len(token) // 2
-    corrupt = token[:i] + ("A" if token[i] != "A" else "B") + token[i + 1:]
+    corrupt = token[:i] + ("A" if token[i] != "A" else "B") + token[i + 1 :]
     with pytest.raises(PayloadError):
         WatermarkPayload.decode(corrupt)
 

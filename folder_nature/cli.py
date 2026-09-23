@@ -18,7 +18,6 @@ import argparse
 import importlib.resources as pkg_resources
 import sys
 from pathlib import Path
-from typing import Optional
 
 import yaml
 
@@ -34,12 +33,10 @@ from .schema import (
     BEING_TYPES,
     FolderNature,
     Identity,
-    Memory,
     SchemaError,
     from_dict,
 )
 from .search import iter_nature_file_paths, list_all, search
-
 
 # Default templates ship in the package; user-selectable via ``--template``.
 DEFAULT_TEMPLATES = (
@@ -81,7 +78,9 @@ def cmd_init(args: argparse.Namespace) -> int:
     """folder-nature init [PATH] [--template NAME]"""
     target = Path(args.path).resolve()
     if not target.exists():
-        print(f"folder-nature: error: directory does not exist: {target}", file=sys.stderr)
+        print(
+            f"folder-nature: error: directory does not exist: {target}", file=sys.stderr
+        )
         return 2
     if not target.is_dir():
         print(f"folder-nature: error: not a directory: {target}", file=sys.stderr)
@@ -111,8 +110,10 @@ def cmd_init(args: argparse.Namespace) -> int:
         try:
             nature = from_dict(data)
         except SchemaError as e:
-            print(f"folder-nature: error: template {args.template!r} invalid: {e}",
-                  file=sys.stderr)
+            print(
+                f"folder-nature: error: template {args.template!r} invalid: {e}",
+                file=sys.stderr,
+            )
             return 1
     else:
         # Minimal nature without template — user provides name/being/purpose
@@ -157,12 +158,14 @@ def cmd_show(args: argparse.Namespace) -> int:
             file=sys.stderr,
         )
         return 1
-    print(yaml.safe_dump(
-        nature.to_dict(),
-        sort_keys=False,
-        allow_unicode=True,
-        default_flow_style=False,
-    ).rstrip())
+    print(
+        yaml.safe_dump(
+            nature.to_dict(),
+            sort_keys=False,
+            allow_unicode=True,
+            default_flow_style=False,
+        ).rstrip()
+    )
     return 0
 
 
@@ -179,12 +182,14 @@ def cmd_query(args: argparse.Namespace) -> int:
     print(f"{director_path}")
     if args.verbose:
         print()
-        print(yaml.safe_dump(
-            nature.to_dict(),
-            sort_keys=False,
-            allow_unicode=True,
-            default_flow_style=False,
-        ).rstrip())
+        print(
+            yaml.safe_dump(
+                nature.to_dict(),
+                sort_keys=False,
+                allow_unicode=True,
+                default_flow_style=False,
+            ).rstrip()
+        )
     return 0
 
 
@@ -262,13 +267,21 @@ def build_parser() -> argparse.ArgumentParser:
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p_init = sub.add_parser("init", help="Create a new .folder-nature in directory")
-    p_init.add_argument("path", nargs="?", default=".", help="Target directory (default: cwd)")
-    p_init.add_argument("--template", choices=sorted(DEFAULT_TEMPLATES),
-                        help="Use a packaged template")
+    p_init.add_argument(
+        "path", nargs="?", default=".", help="Target directory (default: cwd)"
+    )
+    p_init.add_argument(
+        "--template", choices=sorted(DEFAULT_TEMPLATES), help="Use a packaged template"
+    )
     p_init.add_argument("--name", help="identity.name (overrides template default)")
-    p_init.add_argument("--being", choices=sorted(BEING_TYPES),
-                        help="identity.being (required without --template)")
-    p_init.add_argument("--purpose", help="identity.purpose (required without --template)")
+    p_init.add_argument(
+        "--being",
+        choices=sorted(BEING_TYPES),
+        help="identity.being (required without --template)",
+    )
+    p_init.add_argument(
+        "--purpose", help="identity.purpose (required without --template)"
+    )
     p_init.add_argument("--tag", action="append", help="Add a tag (repeatable)")
     p_init.add_argument("--director", action="store_true", help="Mark as director")
     p_init.add_argument("--force", action="store_true", help="Overwrite existing")
@@ -280,8 +293,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     p_query = sub.add_parser("query", help="Find director ancestor")
     p_query.add_argument("path", nargs="?", default=".")
-    p_query.add_argument("--verbose", "-v", action="store_true",
-                         help="Also print the director's .folder-nature content")
+    p_query.add_argument(
+        "--verbose",
+        "-v",
+        action="store_true",
+        help="Also print the director's .folder-nature content",
+    )
     p_query.set_defaults(func=cmd_query)
 
     p_search = sub.add_parser("search", help="Find folders matching criteria")
@@ -304,12 +321,13 @@ def build_parser() -> argparse.ArgumentParser:
     # v-next: the mark layer (trademark / watermark / copy / sign / verify / scan).
     # Attribution + authenticity, never prevention. See folder_nature.mark.
     from .mark.cli_mark import add_mark_subcommands
+
     add_mark_subcommands(sub)
 
     return parser
 
 
-def main(argv: Optional[list] = None) -> int:
+def main(argv: list | None = None) -> int:
     parser = build_parser()
     args = parser.parse_args(argv)
     return args.func(args)

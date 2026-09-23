@@ -2,8 +2,13 @@
 
 import pytest
 
-from folder_nature.mark.config import (MARK_CONFIG_FILENAME, MarkConfig,
-                                       MarkConfigError, load_config, save_config)
+from folder_nature.mark.config import (
+    MARK_CONFIG_FILENAME,
+    MarkConfig,
+    MarkConfigError,
+    load_config,
+    save_config,
+)
 
 
 def test_trademark_is_required_no_default():
@@ -24,8 +29,12 @@ def test_invalid_tier_rejected():
 
 
 def test_save_load_roundtrip(tmp_path):
-    cfg = MarkConfig(trademark="Aura Elements", company="Aura Elements Ltd",
-                     tier="enterprise", license_tier="enterprise")
+    cfg = MarkConfig(
+        trademark="Aura Elements",
+        company="Aura Elements Ltd",
+        tier="enterprise",
+        license_tier="enterprise",
+    )
     save_config(tmp_path, cfg)
     assert (tmp_path / MARK_CONFIG_FILENAME).exists()
     back = load_config(tmp_path)
