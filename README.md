@@ -276,13 +276,9 @@ promise about timing.
 
 ## Status, and how we work
 
-On PyPI since **2026-07-05** — and as of today `pip install folder-nature` gives you **`0.2.1`**.
-The newer tags are published on GitHub and not yet on PyPI, so if you want the mark-layer fixes
-(re-stamping idempotency in `0.2.2`, the UTC manifest date in `0.2.3`) install from the tag:
-
-```bash
-pip install "folder-nature @ git+https://github.com/myfjin/folder-nature@v0.2.3"
-``` The tool is small on
+On PyPI since **2026-07-05**. `pip install -U folder-nature` gets the newest release, and the
+roadmap below says which fixes landed in which version — no need to name a version here, where it
+would only go stale. The tool is small on
 purpose — one runtime dependency (PyYAML), no build-time code generation — and the
 part that is not small is the mark layer, which is where the care went.
 
