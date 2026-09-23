@@ -6,13 +6,12 @@ YAML I/O via PyYAML.
 
 from __future__ import annotations
 
+from collections.abc import Iterator
 from pathlib import Path
-from typing import Iterator, Optional, Tuple
 
 import yaml
 
-from .schema import FolderNature, from_dict, SchemaError, SCHEMA_VERSION
-
+from .schema import FolderNature, SchemaError, from_dict
 
 NATURE_FILENAME = ".folder-nature"
 
@@ -80,7 +79,7 @@ def write_folder_nature(directory: Path, nature: FolderNature) -> Path:
     return target
 
 
-def get_folder_nature(path: Path) -> Optional[FolderNature]:
+def get_folder_nature(path: Path) -> FolderNature | None:
     """Return the closest ``.folder-nature`` walking upward from ``path``.
 
     Returns ``None`` if no ``.folder-nature`` exists in any ancestor.
@@ -94,7 +93,7 @@ def get_folder_nature(path: Path) -> Optional[FolderNature]:
     return None
 
 
-def find_director(path: Path) -> Tuple[Optional[Path], Optional[FolderNature]]:
+def find_director(path: Path) -> tuple[Path | None, FolderNature | None]:
     """Walk upward until finding a folder-nature with ``director: true``.
 
     Returns ``(director_path, nature)`` or ``(None, None)`` if no director

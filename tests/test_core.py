@@ -16,16 +16,15 @@ from folder_nature.core import (
 from folder_nature.schema import (
     FolderNature,
     Identity,
-    SCHEMA_VERSION,
     SchemaError,
 )
-
 
 # ── Fixtures ─────────────────────────────────────────────────────────────
 
 
-def _make_nature(name: str, being: str = "workspace", director: bool = False,
-                 tags=None) -> FolderNature:
+def _make_nature(
+    name: str, being: str = "workspace", director: bool = False, tags=None
+) -> FolderNature:
     return FolderNature(
         identity=Identity(name=name, being=being, purpose=f"{name} folder"),
         director=director,
@@ -81,6 +80,7 @@ def test_read_invalid_yaml_raises(tmp_path: Path):
     bad = tmp_path / NATURE_FILENAME
     bad.write_text("not: valid: yaml: [unclosed")
     import yaml
+
     with pytest.raises(yaml.YAMLError):
         read_folder_nature(bad)
 

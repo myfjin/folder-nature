@@ -19,12 +19,10 @@ import binascii
 import json
 import zlib
 from dataclasses import dataclass
-from typing import Optional
-
 
 # Fixed signature magic — the "invisible pyramid" marker used to locate a mark.
 # The delta is the pyramid; "AE" is the layer tag; "1" is the payload version.
-PYRAMID = "△"          # △
+PYRAMID = "△"  # △
 MAGIC = "AEMARK1"
 PAYLOAD_VERSION = 1
 
@@ -44,7 +42,7 @@ class WatermarkPayload:
     trademark: str
     company: str
     number: str = "0"
-    pattern_id: Optional[str] = None
+    pattern_id: str | None = None
     version: int = PAYLOAD_VERSION
 
     @property
@@ -63,8 +61,9 @@ class WatermarkPayload:
             "pid": self.pattern_id or "",
             "v": int(self.version),
         }
-        return json.dumps(obj, sort_keys=True, separators=(",", ":"),
-                          ensure_ascii=False).encode("utf-8")
+        return json.dumps(
+            obj, sort_keys=True, separators=(",", ":"), ensure_ascii=False
+        ).encode("utf-8")
 
     def encode(self) -> str:
         """Encode to a compact, CRC-tagged base32 string (channel-agnostic).
@@ -80,7 +79,7 @@ class WatermarkPayload:
     # ── decoding ─────────────────────────────────────────────────────────────
 
     @classmethod
-    def decode(cls, token: str) -> "WatermarkPayload":
+    def decode(cls, token: str) -> WatermarkPayload:
         """Decode a base32 token, verifying the CRC. Raises PayloadError."""
         token = token.strip()
         # restore base32 padding to a multiple of 8
