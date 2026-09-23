@@ -316,19 +316,27 @@ tamper-fails-verify, and the sale→leak→claim enforcement chain.
 
 ## Origin
 
-folder-nature was born in a **conversation with Ver** — our second thinker, running on another
-machine — in **late April / early May 2026**, in the middle of the "talk to folders" hype. What we
-were circling then was close to literally talking to a folder: an idea we were calling something
-like **"talk-to-folders"**.
+folder-nature was born in an **AURA conversation between Illia and Steward (Ver)** on
+**9 May 2026** — the same day the earliest surviving note on it was written — in the middle of the
+"talk to folders" hype. That note is called *"Talk to Folders (Robotic Folders)"*, and its core
+principle is still the reason this tool exists:
 
-What shipped is the part of that idea that turned out to be checkable: a folder that **declares
-what it is** — purpose, kind, tags, history — in a file that travels with it, plus the mark layer
-that lets the declaration be **verified** rather than trusted.
+> **Folders have more experience than files. They are the universe for files which have never left
+> their place.**
 
-It then proved itself on a 3-node operational mesh before being extracted as this standalone tool.
+The idea then was a conversational interface for directories — folders as living ecosystems with a
+collective memory, rather than containers. Each directory would get a `.folder-nature` file: its
+**DNA**, holding what the folder is, what it accepts, and how it wants to be spoken to.
 
-*(The date and the shape of that first conversation are Illia's recollection, recorded here rather
-than left unrecorded. Ver is being asked to confirm the detail — and if he remembers it
-differently, this paragraph changes, because the record is supposed to be what happened.)*
+What shipped is the part of that idea that turned out to be **checkable**: a folder that declares
+what it is, plus a mark layer that lets the declaration be **verified** rather than trusted. The
+conversation did not become a feature; it became a format.
+
+It proved itself on a 3-node operational mesh before being extracted as this standalone tool.
+
+*(Provenance: the 9 May 2026 note is the earliest artifact — 2,043 bytes, md5 `7c9142aa730d…`. A
+fuller reconstruction written the following month reads the origin back as a dialogue between
+"Zarathustra and Steward"; that framing is the reconstruction's own, recorded here as such rather
+than as a verified fact.)*
 
 🐍🦅💎
