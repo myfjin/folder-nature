@@ -242,6 +242,13 @@ Shipped:
 - **`0.2.1`** — the Go watermark fix. The structural channel emitted its constant
   before `package` and `import`, which is not valid Go, so the mark could not be
   embedded in a Go source file at all.
+- **`0.2.2`** — re-stamping is idempotent again. The mark line used to be recognised
+  by asking a *character-set* question — "does this line contain only comment
+  characters, spaces and zero-width characters?" — which is a proxy for "is this a
+  mark line", and it answers wrong the moment a formatter indents the line (`gofmt`
+  uses tabs). The old mark then survived re-stamping: two frames in one file, the
+  previous payload still extractable, and the file still verifying as authentic. The
+  line is now recognised by its structure.
 
 Next, with no dates attached:
 
@@ -254,7 +261,7 @@ promise about timing.
 
 ## Status, and how we work
 
-On PyPI since **2026-07-05**; the newest release is **`0.2.1`**. The tool is small on
+On PyPI since **2026-07-05**; the newest release is **`0.2.2`**. The tool is small on
 purpose — one runtime dependency (PyYAML), no build-time code generation — and the
 part that is not small is the mark layer, which is where the care went.
 
