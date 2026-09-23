@@ -40,8 +40,8 @@ from .payload import PYRAMID, PayloadError, WatermarkPayload
 # ── zero-width alphabet (channel A) ──────────────────────────────────────────
 
 _ZW0 = "\u200b"  # ZERO WIDTH SPACE           -> bit 0
-_ZW1 = "‌"  # ZERO WIDTH NON-JOINER      -> bit 1
-_ZWS = "⁣"  # INVISIBLE SEPARATOR        -> frame sentinel
+_ZW1 = "\u200c"  # ZERO WIDTH NON-JOINER      -> bit 1
+_ZWS = "\u2063"  # INVISIBLE SEPARATOR        -> frame sentinel
 _ZW_CHARS = _ZW0 + _ZW1 + _ZWS
 
 
