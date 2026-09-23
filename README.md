@@ -234,15 +234,47 @@ copying.
 
 ## Roadmap
 
-- **v0.1 (this release):** core MVP — schema, CLI, 5 templates, tests
-- **v0.2:** export/import, migration tool, more templates
-- **v1.0:** AI integration (`folder-nature ai-suggest`), filesystem watcher,
-  comprehensive docs
+Shipped:
+
+- **`0.1.0`** — the MVP: schema, CLI, five templates, tests.
+- **`0.2.0`** — the mark layer: attribution, signing, enforcement, and
+  `verify --root` as a single-verdict check over a tree.
+- **`0.2.1`** — the Go watermark fix. The structural channel emitted its constant
+  before `package` and `import`, which is not valid Go, so the mark could not be
+  embedded in a Go source file at all.
+
+Next, with no dates attached:
+
+- export/import, a migration tool, more templates.
+- **`1.0`** — AI integration (`folder-nature ai-suggest`), a filesystem watcher,
+  and documentation that does not require reading the code.
+
+The versions that exist are the ones in the release list; nothing above is a
+promise about timing.
+
+## Status, and how we work
+
+On PyPI since **2026-07-05**; the newest release is **`0.2.1`**. The tool is small on
+purpose — one runtime dependency (PyYAML), no build-time code generation — and the
+part that is not small is the mark layer, which is where the care went.
+
+- [`CONTRIBUTING.md`](https://github.com/myfjin/folder-nature/blob/main/CONTRIBUTING.md) — what we ask before code, including the
+  two rules this repository paid for: **never add `.folder-nature` after signing a
+  folder** (manifest↔disk parity is the contract), and **a structural watermark must
+  respect the host language's grammar**.
+- [`SECURITY.md`](https://github.com/myfjin/folder-nature/blob/main/SECURITY.md) — how to report privately, what is in scope for a
+  program that writes into directories you point it at, and the never-publish list.
+- [`CREW.md`](https://github.com/myfjin/folder-nature/blob/main/CREW.md) — who makes this and how we work: one page, shared across
+  our repositories.
+- [`AUTHORS`](https://github.com/myfjin/folder-nature/blob/main/AUTHORS) — the crew, one real moment each.
+
+Every commit in a pull request carries a `Signed-off-by:` line (`git commit -s`); CI
+enforces it. `main` takes changes through pull requests only.
 
 ## License
 
-Apache-2.0 from 0.2.0 onward. See [LICENSE](LICENSE). (The `0.1.0` release
-remains MIT.)
+Apache-2.0 from 0.2.0 onward. See [`LICENSE`](https://github.com/myfjin/folder-nature/blob/main/LICENSE). (The `0.1.0`
+release remains MIT.)
 
 ## Development
 
@@ -253,6 +285,13 @@ python3 -m venv .venv
 .venv/bin/pip install -e ".[dev]"
 .venv/bin/pytest
 ```
+
+CI runs that suite on **Python 3.10–3.13, on Linux and macOS** — this tool touches
+filesystems, and filesystems differ — and the **RFC 8032 vector test runs again as its own
+step**, because a crypto regression must not be able to hide behind a green suite. It also
+checks the DCO sign-off, that the wheel and sdist assemble, and that no key, credential or
+private path is tracked. Lint and type checks are not part of the gate yet; the workflow
+file states the measured baseline and why.
 
 Test suite: 66 core tests (schema validation, filesystem operations, search,
 CLI integration) plus the `v-next` mark-layer suite — Ed25519 RFC-8032 vectors,
