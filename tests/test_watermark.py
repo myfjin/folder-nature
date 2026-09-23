@@ -136,6 +136,20 @@ def test_strip_leaves_a_line_of_code_that_merely_contains_a_frame():
     assert "BANNER" in stripped, "stripping removed a line of code"
 
 
+def test_zero_width_alphabet_is_exactly_the_codepoints_its_comments_name():
+    """The alphabet is made of invisible characters, so the source has to SAY which
+    ones they are — and the codepoints are the contract.
+
+    Written as escapes rather than as literal invisible characters: a copy/paste,
+    a re-encoding, or a diff tool that eats the character can then no longer change
+    the alphabet without changing something a reader can see.
+    """
+    assert [ord(c) for c in wm._ZW0] == [0x200B]  # ZERO WIDTH SPACE
+    assert [ord(c) for c in wm._ZW1] == [0x200C]  # ZERO WIDTH NON-JOINER
+    assert [ord(c) for c in wm._ZWS] == [0x2063]  # INVISIBLE SEPARATOR
+    assert wm._ZW_CHARS == "\u200b\u200c\u2063"
+
+
 def test_tamper_detected():
     stamped = wm.stamp_text(PY_SIMPLE, _mark("2"), wm._LANGS[".py"])
     tampered = stamped.replace("AE1.", "AE1.Z", 1)  # corrupt structural token
