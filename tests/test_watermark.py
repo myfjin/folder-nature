@@ -47,7 +47,9 @@ def test_stamped_file_still_runs(tmp_path):
     f = tmp_path / "m.py"
     f.write_text(PY_HARD, encoding="utf-8")
     wm.stamp_file(f, _mark())
-    r = subprocess.run([sys.executable, str(f)], capture_output=True, text=True)
+    r = subprocess.run(
+        [sys.executable, str(f)], capture_output=True, text=True, check=False
+    )
     assert r.returncode == 0
     assert r.stdout.strip() == "12.5664"
 
@@ -131,7 +133,12 @@ def test_strip_leaves_a_line_of_code_that_merely_contains_a_frame():
     such a line; stripping must never remove something it did not write.
     """
     code = 'BANNER = "hello ' + wm._ZWS + wm._ZW0 + wm._ZWS + ' world"\n'
-    assert wm._is_channel_a_line("# note " + wm._ZWS + wm._ZW0 + wm._ZWS + " extra", wm._LANGS[".py"]) is False
+    assert (
+        wm._is_channel_a_line(
+            "# note " + wm._ZWS + wm._ZW0 + wm._ZWS + " extra", wm._LANGS[".py"]
+        )
+        is False
+    )
     stripped = wm.strip_marks(code, wm._LANGS[".py"])
     assert "BANNER" in stripped, "stripping removed a line of code"
 
@@ -203,7 +210,9 @@ def test_go_stamped_file_still_builds(tmp_path):
     )
     wm.stamp_file(f, _mark("0"))
     r = subprocess.run(
-        ["go", "build", "-o", str(tmp_path / "out"), str(f)], capture_output=True
+        ["go", "build", "-o", str(tmp_path / "out"), str(f)],
+        capture_output=True,
+        check=False,
     )
     assert r.returncode == 0, "stamped Go must still compile"
 
