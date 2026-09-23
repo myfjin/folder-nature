@@ -4,13 +4,13 @@ name: CI
 # what lands on main is what a user installs from PyPI, so it should have passed
 # everything a PR passes.
 #
-# NOT YET HERE, and said out loud rather than left to be discovered: the standard
-# we run on aura-brain also lints and type-checks (`ruff check`,
-# `ruff format --check`, `mypy --strict`). This repository predates that. Measured
-# on 2026-09-23: **153 ruff findings (121 auto-fixable), 23 of 30 files would be
-# reformatted, 9 mypy errors**. Adding that as a gate today would be a required
-# check that can never pass — so it is deliberately absent, not forgotten, and it
-# lands as its own change once the baseline is clean.
+# Lint and type checks ARE gates here. They were absent until the baseline could
+# pass: measured on 2026-09-23, this repository carried **153 ruff findings, 23 of
+# 30 files to reformat, and 9 mypy errors**. A required check that can never pass is
+# just another silent failure, so the workflow said so out loud instead of pretending.
+# The baseline was cleaned in two deliberately boring steps (the mechanical fixes and
+# formatter, then the remainder), and both checks are now required. The measurements
+# are the same file — history, not aspiration.
 
 on:
   push:
@@ -103,6 +103,48 @@ jobs:
             fi
           done
           exit $fail
+
+  # -----------------------------------------------------------------------
+  # Lint and format. `ruff format --check` runs too, so the formatting cannot drift
+  # into a state where every future diff is noisy.
+  # -----------------------------------------------------------------------
+  lint:
+    name: ruff (lint + format)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: ruff check
+        run: ruff check .
+      - name: ruff format --check
+        run: ruff format --check .
+
+  # -----------------------------------------------------------------------
+  # Types. The `yaml` boundary is checked against real stubs (types-PyYAML is a
+  # dev dependency) rather than ignored.
+  # -----------------------------------------------------------------------
+  types:
+    name: mypy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ".[dev]"
+      - name: mypy
+        run: mypy folder_nature
 
   # -----------------------------------------------------------------------
   # Build check. Confirms the wheel and sdist actually assemble, so a broken
