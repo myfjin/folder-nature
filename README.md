@@ -41,7 +41,7 @@ pip install folder-nature
 [On PyPI](https://pypi.org/project/folder-nature/) since 2026-07-05 — ahead of
 the planned late-July date. Requires Python 3.10+. Single runtime dependency: PyYAML.
 
-Latest development version:
+Latest development version — unreleased work on `main`, which may be ahead of any release:
 
 ```bash
 pip install git+https://github.com/myfjin/folder-nature.git
