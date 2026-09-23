@@ -113,8 +113,10 @@ class RootReport:
         lines = [
             f"folders: {self.folders}   files: {self.files}",
             f"folder-nature valid: {self.natures_valid}   folder-marks valid: {self.marks_valid}",
-            f"signed subtrees: {len(self.signed_subtrees)} "
-            f"({', '.join(self.signed_subtrees) or 'none'})",
+            (
+                f"signed subtrees: {len(self.signed_subtrees)} "
+                f"({', '.join(self.signed_subtrees) or 'none'})"
+            ),
             f"files signed: {self.files_signed}   watermarks verified: {self.files_watermarked}",
         ]
         if self.selftests_run:
@@ -229,7 +231,7 @@ def orchestrate(
             rep.selftests_run += 1
             try:
                 rc = subprocess.run(
-                    [runner, str(f)], capture_output=True, timeout=120
+                    [runner, str(f)], capture_output=True, timeout=120, check=False
                 ).returncode
             except (OSError, subprocess.TimeoutExpired) as e:
                 rc = -1

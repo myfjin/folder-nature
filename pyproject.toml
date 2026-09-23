@@ -42,6 +42,7 @@ dev = [
     "pytest>=7.0",
     "pytest-cov>=4.0",
     "black>=23.0",   # used by the reformat-survival test (proves the watermark survives a real formatter)
+    "types-PyYAML>=6.0",  # so mypy checks the yaml boundary instead of guessing at it
 ]
 
 [project.scripts]
