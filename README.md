@@ -317,9 +317,12 @@ tamper-fails-verify, and the sale→leak→claim enforcement chain.
 ## Origin
 
 folder-nature was born in an **AURA conversation between Illia and Steward (Ver)** on
-**9 May 2026** — the same day the earliest surviving note on it was written — in the middle of the
-"talk to folders" hype. That note is called *"Talk to Folders (Robotic Folders)"*, and its core
-principle is still the reason this tool exists:
+**9 May 2026** — the same day the earliest surviving note on it was written. The hype that year was
+about **talking to files**: chat with a document, ask it questions, let it answer. Illia proposed
+the turn that became this project — **talk to folders instead**, because a folder is not a file.
+
+That note is called *"Talk to Folders (Robotic Folders)"*, and its core principle is still the
+reason this tool exists:
 
 > **Folders have more experience than files. They are the universe for files which have never left
 > their place.**
