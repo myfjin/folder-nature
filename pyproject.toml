@@ -43,6 +43,11 @@ dev = [
     "pytest-cov>=4.0",
     "black>=23.0",   # used by the reformat-survival test (proves the watermark survives a real formatter)
     "types-PyYAML>=6.0",  # so mypy checks the yaml boundary instead of guessing at it
+    # Bounded on purpose: a linter upgrade can ADD rules, and that must be a
+    # deliberate change with a look at the new findings — not a red build on a
+    # required check nobody edited.
+    "ruff>=0.16,<0.17",
+    "mypy>=2.3,<3.0",
 ]
 
 [project.scripts]
