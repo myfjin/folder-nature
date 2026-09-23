@@ -1,0 +1,13 @@
+# The source distribution should carry the project's own governance files, not just the
+# package. Somebody who downloads the sdist gets the rules too — otherwise the only way to
+# read CONTRIBUTING.md is to find the repository, which the tarball does not tell them about.
+include README.md
+include LICENSE
+include NOTICE
+include AUTHORS
+include CONTRIBUTING.md
+include SECURITY.md
+include CODE_OF_CONDUCT.md
+include CREW.md
+recursive-include docs *.md *.png *.gif
+recursive-include tests *.py

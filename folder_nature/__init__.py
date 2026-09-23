@@ -20,7 +20,7 @@ CLI entry point: ``folder-nature`` (see ``folder_nature.cli``).
 
 from __future__ import annotations
 
-__version__ = "0.2.3"
+__version__ = "0.2.4"
 __schema_version__ = "1.0"
 
 from .core import (
