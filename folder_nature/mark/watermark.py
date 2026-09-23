@@ -159,12 +159,11 @@ def _python_insert_line(src: str) -> int:
         ):
             after = max(after, body[0].value.end_lineno or after)
             idx = 1
-        while (
-            idx < len(body)
-            and isinstance(body[idx], ast.ImportFrom)
-            and body[idx].module == "__future__"
-        ):
-            after = max(after, body[idx].end_lineno or after)
+        while idx < len(body):
+            node = body[idx]
+            if not (isinstance(node, ast.ImportFrom) and node.module == "__future__"):
+                break
+            after = max(after, node.end_lineno or after)
             idx += 1
     except SyntaxError:
         pass
@@ -185,7 +184,7 @@ def _generic_insert_line(src: str, lang: _Lang) -> int:
         if s == "" or s.startswith(lang.line_comment):
             i += 1
             continue
-        if lang.rust_like and (s.startswith("#![") or s.startswith("//!")):
+        if lang.rust_like and s.startswith(("#![", "//!")):
             i += 1
             continue
         break
@@ -210,7 +209,7 @@ def _go_insert_line(src: str) -> int:
     i += 1  # move past 'package X'
     while i < n:
         s = lines[i].strip()
-        if s == "" or s.startswith("//") or s.startswith("/*"):
+        if s == "" or s.startswith(("//", "/*")):
             i += 1
             continue
         if s.startswith("import ("):  # grouped block -> skip to ')'
@@ -353,6 +352,7 @@ def _assert_go_builds(result: str, filename: str) -> None:
             capture_output=True,
             text=True,
             timeout=120,
+            check=False,  # the return code is inspected on the next line
         )
         if r.returncode != 0:
             raise StampError(

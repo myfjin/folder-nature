@@ -50,8 +50,10 @@ def license_text(tier: str, licenses_dir: Path | None = None) -> tuple[str, bool
         if p.exists():
             return p.read_text(encoding="utf-8"), False
     return (
-        f"[LICENSE TEXT PENDING — tier={tier}]\n"
-        "This is a reserved slot. The binding license text is set before sale.\n",
+        (
+            f"[LICENSE TEXT PENDING — tier={tier}]\n"
+            "This is a reserved slot. The binding license text is set before sale.\n"
+        ),
         True,
     )
 

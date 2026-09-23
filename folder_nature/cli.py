@@ -57,18 +57,15 @@ def _load_template(name: str) -> dict:
     Returns the parsed YAML dict. Raises :class:`FileNotFoundError` if name
     isn't a known template.
     """
-    try:
-        # importlib.resources for Python 3.9+; falls back to traversable
-        files = pkg_resources.files("folder_nature.templates")
-        candidate = files / f"{name}.yaml"
-        if not candidate.is_file():
-            raise FileNotFoundError(
-                f"unknown template {name!r}. "
-                f"Available: {', '.join(sorted(DEFAULT_TEMPLATES))}"
-            )
-        return yaml.safe_load(candidate.read_text(encoding="utf-8"))
-    except FileNotFoundError:
-        raise
+    # importlib.resources for Python 3.9+; falls back to traversable
+    files = pkg_resources.files("folder_nature.templates")
+    candidate = files / f"{name}.yaml"
+    if not candidate.is_file():
+        raise FileNotFoundError(
+            f"unknown template {name!r}. "
+            f"Available: {', '.join(sorted(DEFAULT_TEMPLATES))}"
+        )
+    return yaml.safe_load(candidate.read_text(encoding="utf-8"))
 
 
 # ── Subcommand handlers ────────────────────────────────────────────────────

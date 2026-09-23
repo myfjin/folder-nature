@@ -126,7 +126,7 @@ def test_selftest_failure_named(tmp_path):
     pub = _green_tree(
         tmp_path / "t",
         selftest_bad=True,
-        root_spec='orchestrator: true\nselftest:\n  ".py": "%s"\n' % sys.executable,
+        root_spec=f'orchestrator: true\nselftest:\n  ".py": "{sys.executable}"\n',
     )
     # re-sign to include c.py cleanly
     seed, pub = signing.generate_keypair()
@@ -140,7 +140,7 @@ def test_selftest_failure_named(tmp_path):
 def test_selftests_pass_on_green(tmp_path):
     pub = _green_tree(
         tmp_path / "t",
-        root_spec='orchestrator: true\nselftest:\n  ".py": "%s"\n' % sys.executable,
+        root_spec=f'orchestrator: true\nselftest:\n  ".py": "{sys.executable}"\n',
     )
     rep = orch.orchestrate(tmp_path / "t", pub, run_selftests=True)
     assert rep.ok
