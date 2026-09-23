@@ -1,12 +1,37 @@
 name: CI
 
+# Fires on every push to main, and on every PR. The gate is the same either way:
+# what lands on main is what a user installs from PyPI, so it should have passed
+# everything a PR passes.
+#
+# NOT YET HERE, and said out loud rather than left to be discovered: the standard
+# we run on aura-brain also lints and type-checks (`ruff check`,
+# `ruff format --check`, `mypy --strict`). This repository predates that. Measured
+# on 2026-09-23: **153 ruff findings (121 auto-fixable), 23 of 30 files would be
+# reformatted, 9 mypy errors**. Adding that as a gate today would be a required
+# check that can never pass — so it is deliberately absent, not forgotten, and it
+# lands as its own change once the baseline is clean.
+
 on:
   push:
     branches: [main]
   pull_request:
     branches: [main]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
+
+  # -----------------------------------------------------------------------
+  # The test matrix. This tool touches filesystems, and filesystems differ —
+  # so it runs on Linux AND macOS, across every supported Python.
+  # PYTHONHASHSEED=0 keeps anything order-dependent reproducible.
+  # -----------------------------------------------------------------------
   test:
     name: py${{ matrix.python-version }} on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -26,6 +51,145 @@ jobs:
           python -m pip install --upgrade pip
           pip install -e ".[dev]"
       - name: Run tests
+        env:
+          PYTHONHASHSEED: "0"
         run: pytest -q
+
+      # The Ed25519 implementation is vendored, and vendored crypto earns its
+      # trust from published vectors rather than from our own tests. Run again,
+      # as its own step: a crypto regression must not be able to hide behind a
+      # green suite.
       - name: Ed25519 conforms to RFC 8032 vectors
         run: pytest -q tests/test_ed25519_vectors.py
+
+  # -----------------------------------------------------------------------
+  # DCO sign-off enforcement. See CONTRIBUTING.md — we use the sign-off only;
+  # there is no CLA. Every commit in a PR must carry a `Signed-off-by:` trailer
+  # matching the commit author.
+  #
+  # Implemented inline, with no third-party action. The action this standard
+  # used to name (`tim-actions/dco@v1.1.0`) declares `using: node12`, and GitHub
+  # has retired that runtime — on a sibling repo it failed SILENTLY, and because
+  # it was a required check it blocked every pull request. This is the same rule
+  # with no runtime left to retire.
+  # -----------------------------------------------------------------------
+  dco:
+    name: DCO check
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify Signed-off-by on every PR commit
+        run: |
+          set -u
+          base="${{ github.event.pull_request.base.sha }}"
+          head="${{ github.event.pull_request.head.sha }}"
+          merge_base=$(git merge-base "$base" "$head")
+          fail=0
+          for sha in $(git rev-list "$merge_base..$head"); do
+            name=$(git log -1 --format='%an' "$sha")
+            email=$(git log -1 --format='%ae' "$sha")
+            expected="Signed-off-by: ${name} <${email}>"
+            # fixed-string match: an author email can contain regex
+            # metacharacters (the '+' in a GitHub noreply address), so -F.
+            if git log -1 --format='%B' "$sha" | sed 's/[[:space:]]*$//' | grep -qixF "$expected"; then
+              echo "OK    $sha  ($email)"
+            else
+              echo "::error::commit $sha is missing '${expected}'"
+              fail=1
+            fi
+          done
+          exit $fail
+
+  # -----------------------------------------------------------------------
+  # Build check. Confirms the wheel and sdist actually assemble, so a broken
+  # pyproject.toml or a missing package-data declaration is caught here rather
+  # than by a user's `pip install`. Deliberately does NOT publish: PyPI is a
+  # separate decision, and this step must not be able to make one.
+  # -----------------------------------------------------------------------
+  build:
+    name: build sdist + wheel
+    needs: [test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - name: Install build
+        run: python -m pip install --upgrade pip build
+      - name: Build
+        run: python -m build
+      - name: Show what the sdist actually contains
+        run: |
+          python - <<'PY'
+          import tarfile, glob
+          path = sorted(glob.glob("dist/*.tar.gz"))[-1]
+          with tarfile.open(path) as t:
+              names = t.getnames()
+          print(path, f"({len(names)} entries)")
+          for n in names[:40]:
+              print("  ", n)
+          PY
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ github.sha }}
+          path: dist/*
+          retention-days: 7
+
+  # -----------------------------------------------------------------------
+  # Privacy. This repository ships code and templates; it must never carry a
+  # key. That is not a style preference — folder-nature signs folders with an
+  # Ed25519 key that lives in ~/.config/folder-nature/, and a key in a public
+  # tree is a signing authority anyone can use.
+  # -----------------------------------------------------------------------
+  privacy:
+    name: privacy scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: No key material or credentials in tracked files
+        run: |
+          set -euo pipefail
+          # .github/workflows/ is skipped because THIS FILE carries the patterns as
+          # text. Without the exclusion the check matches itself and fails on every
+          # run — caught by making it fail once before trusting it.
+          files=$(git ls-files | grep -vE '^\.github/workflows/')
+          hits=$(echo "$files" | xargs grep -nIE \
+            'BEGIN [A-Z ]*PRIVATE KEY|PRIVATE KEY-----|sk-[A-Za-z0-9]{20,}|ghp_[A-Za-z0-9]{20,}' \
+            2>/dev/null || true)
+          if [ -n "$hits" ]; then
+            echo "$hits"
+            echo "::error::possible key material or credential in a tracked file"
+            exit 1
+          fi
+          echo "clean"
+
+      - name: No absolute private paths
+        run: |
+          set -euo pipefail
+          hits=$(git ls-files | xargs grep -nIE \
+            '/home/(au|bu)/|/Users/s_[a-z]+/|\.config/folder-nature/[a-z.]+' \
+            2>/dev/null | grep -v '~/.config/folder-nature/' || true)
+          if [ -n "$hits" ]; then
+            echo "$hits"
+            echo "::error::an absolute private path is in a tracked file"
+            exit 1
+          fi
+          echo "clean"
+
+      - name: The signing key is never inside a tree
+        run: |
+          set -euo pipefail
+          if git ls-files | grep -qiE '(^|/)(aura-signing|folder-nature)[^/]*\.(key|pem|priv)$'; then
+            git ls-files | grep -iE '(^|/)(aura-signing|folder-nature)[^/]*\.(key|pem|priv)$'
+            echo "::error::a signing key is tracked — see SECURITY.md"
+            exit 1
+          fi
+          echo "clean"
