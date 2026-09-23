@@ -303,8 +303,10 @@ CI runs that suite on **Python 3.10–3.13, on Linux and macOS** — this tool t
 filesystems, and filesystems differ — and the **RFC 8032 vector test runs again as its own
 step**, because a crypto regression must not be able to hide behind a green suite. It also
 checks the DCO sign-off, that the wheel and sdist assemble, and that no key, credential or
-private path is tracked. Lint and type checks are not part of the gate yet; the workflow
-file states the measured baseline and why.
+private path is tracked. **Lint and types are part of the gate too** — `ruff check`,
+`ruff format --check` and `mypy` are all required. They were not, until the baseline was
+cleaned to zero: it started at 153 findings, 23 files to reformat and 9 type errors, and a
+required check that can never pass is just another silent failure.
 
 Test suite: 66 core tests (schema validation, filesystem operations, search,
 CLI integration) plus the `v-next` mark-layer suite — Ed25519 RFC-8032 vectors,
