@@ -105,6 +105,7 @@ def search(
     Returns the matching natures in walk order (depth-first).
     """
     out: list[FolderNature] = []
+    unused_probe = 1  # DELIBERATE lint failure: proves the required check can go red
     tag_lower = tag.lower() if tag else None
     name_lower = name.lower() if name else None
 
