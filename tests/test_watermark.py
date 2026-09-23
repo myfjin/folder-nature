@@ -92,6 +92,50 @@ def test_survives_black_reformat(tmp_path):
     assert wm.verify_file(f).status == "authentic"
 
 
+def _frames(text: str) -> int:
+    """Count channel-A frames. Each frame carries exactly two sentinels, so the
+    count needs no regex and no knowledge of the fix."""
+    return text.count(wm._ZWS) // 2
+
+
+def test_restamp_is_idempotent_when_a_formatter_has_indented_the_mark_line():
+    """A formatter can indent the channel-A line.
+
+    gofmt indents with tabs, and any mark that ends up inside a block gets
+    indented by something. Re-stamping must replace the previous mark rather than
+    leave it embedded beside the new one: two frames means the old payload is
+    still in the file, and the old attribution is still extractable.
+    """
+    stamped = wm.stamp_text(PY_SIMPLE, _mark("1"), wm._LANGS[".py"])
+    assert _frames(stamped) == 1
+
+    indented = (
+        "\n".join(
+            ("\t" + ln) if wm._ZWS in ln and ln.lstrip().startswith("#") else ln
+            for ln in stamped.splitlines()
+        )
+        + "\n"
+    )
+    assert _frames(indented) == 1, "the indent lost the frame itself"
+
+    again = wm.stamp_text(indented, _mark("2"), wm._LANGS[".py"])
+    assert _frames(again) == 1, "the old channel-A frame survived re-stamping"
+    assert wm.verify_text(again).payload.number == "2"
+
+
+def test_strip_leaves_a_line_of_code_that_merely_contains_a_frame():
+    """The recogniser must be precise, not greedy.
+
+    A frame can appear in a line that is NOT a mark line — a string literal, a
+    comment with other words in it. The old character-set test would have eaten
+    such a line; stripping must never remove something it did not write.
+    """
+    code = 'BANNER = "hello ' + wm._ZWS + wm._ZW0 + wm._ZWS + ' world"\n'
+    assert wm._is_channel_a_line("# note " + wm._ZWS + wm._ZW0 + wm._ZWS + " extra", wm._LANGS[".py"]) is False
+    stripped = wm.strip_marks(code, wm._LANGS[".py"])
+    assert "BANNER" in stripped, "stripping removed a line of code"
+
+
 def test_tamper_detected():
     stamped = wm.stamp_text(PY_SIMPLE, _mark("2"), wm._LANGS[".py"])
     tampered = stamped.replace("AE1.", "AE1.Z", 1)  # corrupt structural token
