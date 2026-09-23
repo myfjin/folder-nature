@@ -1,5 +1,14 @@
 # folder-nature
 
+[![PyPI](https://img.shields.io/pypi/v/folder-nature?label=PyPI)](https://pypi.org/project/folder-nature/)
+[![Python](https://img.shields.io/pypi/pyversions/folder-nature)](https://pypi.org/project/folder-nature/)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue)](https://github.com/myfjin/folder-nature/blob/main/LICENSE)
+
+**Install:** [`pip install folder-nature`](https://pypi.org/project/folder-nature/) ·
+[Releases](https://github.com/myfjin/folder-nature/releases) ·
+[Contributing](https://github.com/myfjin/folder-nature/blob/main/CONTRIBUTING.md) ·
+[Security](https://github.com/myfjin/folder-nature/blob/main/SECURITY.md)
+
 > *Folders are not containers. They're ecosystems with collective memory, personality, and rules.*
 
 A directory becomes a conversation partner: it has identity, purpose, rules,
