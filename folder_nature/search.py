@@ -109,15 +109,22 @@ def search(
     name_lower = name.lower() if name else None
 
     for nature in list_all(root):
-        if being is not None and nature.identity is not None:
-            if nature.identity.being != being:
-                continue
-        if tag_lower is not None:
-            if not any(tag_lower in t.lower() for t in nature.tags):
-                continue
-        if name_lower is not None and nature.identity is not None:
-            if name_lower not in nature.identity.name.lower():
-                continue
+        if (
+            being is not None
+            and nature.identity is not None
+            and nature.identity.being != being
+        ):
+            continue
+        if tag_lower is not None and not any(
+            tag_lower in t.lower() for t in nature.tags
+        ):
+            continue
+        if (
+            name_lower is not None
+            and nature.identity is not None
+            and name_lower not in nature.identity.name.lower()
+        ):
+            continue
         out.append(nature)
 
     return out

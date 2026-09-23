@@ -49,9 +49,9 @@ def _resolve_config(target: Path, args: argparse.Namespace) -> MarkConfig | None
     trademark = getattr(args, "trademark", None)
     tier = getattr(args, "tier", None)
     company = getattr(args, "company", None)
-    if cfg is None and not trademark:
-        return None
     if cfg is None:
+        if not trademark:
+            return None
         return MarkConfig(trademark=trademark, company=company, tier=tier or "team")
     if trademark:
         cfg.trademark = trademark
@@ -92,19 +92,19 @@ def cmd_trademark(args: argparse.Namespace) -> int:
         print(f"wrote {path}")
         print(f"  trademark: {cfg.trademark}  tier: {cfg.tier}")
         return 0
-    cfg = load_config(directory)
-    if cfg is None:
+    current = load_config(directory)
+    if current is None:
         print(
             f"no mark config at {directory} — set one with "
             f"`folder-nature trademark . --set NAME`",
             file=sys.stderr,
         )
         return 1
-    print(f"trademark: {cfg.trademark}")
-    print(f"company:   {cfg.company}")
-    print(f"tier:      {cfg.tier}")
-    if cfg.license_tier:
-        print(f"license:   {cfg.license_tier}")
+    print(f"trademark: {current.trademark}")
+    print(f"company:   {current.company}")
+    print(f"tier:      {current.tier}")
+    if current.license_tier:
+        print(f"license:   {current.license_tier}")
     return 0
 
 
