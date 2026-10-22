@@ -105,7 +105,8 @@ Customize at init time with `--name "your-name"` or edit the resulting
 | `folder-nature list [ROOT]` | Tree view of every tagged folder |
 | `folder-nature version` | Print tool + schema versions |
 
-`PATH` and `ROOT` default to the current directory.
+`PATH` and `ROOT` default to the current directory. **Nine more commands cover
+the mark layer — see [The mark layer](#the-mark-layer--attribution--authenticity-never-prevention) below.**
 
 ## Schema v1.0
 
@@ -155,11 +156,14 @@ custom values (extensibility hatch). Known types:
    covering the signing/watermark work; the `0.1.0` release remains MIT).
    Code reviewable. Schema documented.
 
-## The mark layer (`v-next`) — attribution + authenticity, never prevention
+## The mark layer — attribution + authenticity, never prevention
 
-The `v-next` branch adds the layer that lets a folder of work be *sold with
+Shipped since **0.2.0**. The mark layer lets a folder of work be *sold with
 attribution*: a configurable trademark, an invisible-and-visible watermark, a
-cooperative copy tool, leak tracing, and cryptographic file signing.
+cooperative copy tool, leak tracing, and cryptographic file signing. Nine
+CLI subcommands (`trademark`, `stamp`, `mark-show`, `copy`, `keygen`, `sign`,
+`verify`, `scan`, `stamp-sale`), covered by the same test gate as the identity
+layer.
 
 **The load-bearing truth, stated up front:** you **cannot** prevent someone
 copying files on their own disk — `cp` beats any in-file mechanism, and we have
@@ -319,11 +323,11 @@ private path is tracked. **Lint and types are part of the gate too** — `ruff c
 cleaned to zero: it started at 153 findings, 23 files to reformat and 9 type errors, and a
 required check that can never pass is just another silent failure.
 
-Test suite: 66 core tests (schema validation, filesystem operations, search,
-CLI integration) plus the `v-next` mark-layer suite — Ed25519 RFC-8032 vectors,
-watermark gate-compatibility, reformat survival (including a real `black` run),
-extractability, tamper detection, copy-limiter tiers, sign/verify round-trip and
-tamper-fails-verify, and the sale→leak→claim enforcement chain.
+Test suite: **124 tests total** — 66 core (schema validation, filesystem
+operations, search, CLI integration) and 58 mark-layer (Ed25519 RFC-8032
+vectors, watermark gate-compatibility, reformat survival including a real
+`black` run, extractability, tamper detection, copy-limiter tiers, sign/verify
+round-trip and tamper-fails-verify, and the sale→leak→claim enforcement chain).
 
 ## Origin
 
