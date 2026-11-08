@@ -34,7 +34,10 @@ jobs:
   # -----------------------------------------------------------------------
   test:
     name: py${{ matrix.python-version }} on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    # py3.10 runs on ubuntu-24.04: ubuntu-latest moved to 26.04, which has no 3.10 preinstalled, and
+    # setup-python's download returned HTTP 504 on three runs (2026-11-08). The job name is unchanged,
+    # so required checks still match. Drop this when 3.10 leaves the matrix.
+    runs-on: ${{ matrix.python-version == '3.10' && matrix.os == 'ubuntu-latest' && 'ubuntu-24.04' || matrix.os }}
     strategy:
       fail-fast: false
       matrix:
