@@ -60,7 +60,7 @@ Each rule below was learned from a specific afternoon where we got it wrong firs
     python -m pip install -e ".[dev]"
     pytest -q
 
-CI runs the same suite on **Python 3.10–3.13, on Linux and macOS** — because this tool touches filesystems, and filesystems differ. The RFC 8032 vector test is run **again as its own step**, so a crypto regression cannot hide behind a green suite.
+CI runs the same suite on **Python 3.11–3.13, on Linux and macOS** — because this tool touches filesystems, and filesystems differ. The RFC 8032 vector test is run **again as its own step**, so a crypto regression cannot hide behind a green suite.
 
 If you change the **schema**, add a test that fails against the old shape. If you change **signing or verification**, add a case that the current checker *rejects* — then make it accept.
 

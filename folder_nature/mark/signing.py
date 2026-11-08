@@ -26,7 +26,7 @@ import json
 import os
 import stat
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 from .. import _ed25519 as ed
@@ -138,7 +138,7 @@ def build_manifest(
     return {
         "manifest_version": MANIFEST_VERSION,
         "trademark": trademark,
-        "created": datetime.now(timezone.utc).date().isoformat(),
+        "created": datetime.now(UTC).date().isoformat(),
         "algorithm": "ed25519",
         "public_key": public_key_hex,
         "files": files,
