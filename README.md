@@ -39,7 +39,7 @@ pip install folder-nature
 ```
 
 [On PyPI](https://pypi.org/project/folder-nature/) since 2026-07-05 — ahead of
-the planned late-July date. Requires Python 3.10+. Single runtime dependency: PyYAML.
+the planned late-July date. Requires Python 3.11+. Single runtime dependency: PyYAML.
 
 Latest development version — unreleased work on `main`, which may be ahead of any release:
 
@@ -314,7 +314,7 @@ python3 -m venv .venv
 .venv/bin/pytest
 ```
 
-CI runs that suite on **Python 3.10–3.13, on Linux and macOS** — this tool touches
+CI runs that suite on **Python 3.11–3.13, on Linux and macOS** — this tool touches
 filesystems, and filesystems differ — and the **RFC 8032 vector test runs again as its own
 step**, because a crypto regression must not be able to hide behind a green suite. It also
 checks the DCO sign-off, that the wheel and sdist assemble, and that no key, credential or
